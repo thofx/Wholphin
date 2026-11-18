@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="nova_home_details">查看详情</string>
+    <string name="nova_spotlight">聚光灯</string>
+    <string name="nova_spotlight_summary">已开启 · %1$d 项</string>
+    <string name="nova_spotlight_off">关闭</string>
+    <string name="nova_spotlight_show">显示聚光灯</string>
+    <string name="nova_spotlight_count">数量</string>
+    <string name="nova_spotlight_auto_rotate">自动轮播</string>
+    <string name="nova_spotlight_seconds">%1$d 秒</string>
 </resources>

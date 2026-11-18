@@ -102,8 +102,6 @@ import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
 
-private const val AUTO_ADVANCE_MS = 8_000
-
 /** How much of the first row shows under the spotlight, hinting that the page scrolls */
 private val SpotlightPeek = 64.dp
 
@@ -127,7 +125,22 @@ fun NovaHomeContent(
     loadingState: LoadingState? = null,
 ) {
     val topBar = LocalNovaTopBar.current
-    val entries = remember(homeRows) { buildSpotlight(homeRows) }
+    val settings = rememberSpotlightSettings()
+    val entries =
+        remember(homeRows, settings) {
+            if (settings.enabled) {
+                buildSpotlight(
+                    rows = homeRows,
+                    maxEntries = settings.maxEntries,
+                    maxResumed = if (settings.continueWatching) 2 else 0,
+                    maxNextUp = if (settings.nextUp) 1 else 0,
+                    recentlyAdded = settings.recentlyAdded,
+                )
+            } else {
+                emptyList()
+            }
+        }
+    val rotateMs = settings.autoRotateSeconds * 1000
     val hasSpotlight = entries.isNotEmpty()
     var savedIndex by rememberSaveable { mutableIntStateOf(0) }
     // The list can shrink (refresh, removed item)
@@ -158,9 +171,9 @@ fun NovaHomeContent(
         if (hasSpotlight && !inRows) spotlightFocus.tryRequestFocus()
     }
     // Rotate while the spotlight has focus; flipping restarts the wait
-    LaunchedEffect(index, spotlightFocused, entries.size) {
-        if (spotlightFocused && entries.size > 1) {
-            delay(AUTO_ADVANCE_MS.toLong())
+    LaunchedEffect(index, spotlightFocused, entries.size, rotateMs) {
+        if (spotlightFocused && entries.size > 1 && rotateMs > 0) {
+            delay(rotateMs.toLong())
             savedIndex = (index + 1) % entries.size
         }
     }
@@ -205,6 +218,7 @@ fun NovaHomeContent(
                         index = index,
                         onIndexChange = { savedIndex = it },
                         focused = spotlightFocused,
+                        rotateMs = rotateMs,
                         showLogo = showLogo,
                         focusRequester = spotlightFocus,
                         onFocusChanged = { focused ->
@@ -330,6 +344,7 @@ private fun SpotlightPane(
     index: Int,
     onIndexChange: (Int) -> Unit,
     focused: Boolean,
+    rotateMs: Int,
     showLogo: Boolean,
     focusRequester: FocusRequester,
     onFocusChanged: (Boolean) -> Unit,
@@ -343,8 +358,8 @@ private fun SpotlightPane(
     val current by rememberUpdatedState(entry)
     // Progress of the auto advance, shown on the current thumbnail
     val progress = remember(index, focused) { Animatable(0f) }
-    LaunchedEffect(index, focused) {
-        if (focused && entries.size > 1) progress.animateTo(1f, tween(AUTO_ADVANCE_MS, easing = LinearEasing))
+    LaunchedEffect(index, focused, rotateMs) {
+        if (focused && entries.size > 1 && rotateMs > 0) progress.animateTo(1f, tween(rotateMs, easing = LinearEasing))
     }
     Box(modifier) {
         Column(

@@ -35,6 +35,7 @@ fun buildSpotlight(
     maxEntries: Int = 7,
     maxResumed: Int = 2,
     maxNextUp: Int = 1,
+    recentlyAdded: Boolean = true,
 ): List<SpotlightEntry> {
     val loaded = rows.withIndex().mapNotNull { (rowIndex, row) -> (row as? HomeRowLoadingState.Success)?.let { rowIndex to it } }
     val seenSeries = mutableSetOf<Any>()
@@ -68,7 +69,7 @@ fun buildSpotlight(
 
     val recentlyAdded =
         loaded
-            .filter { (_, row) -> row.rowType is HomeRowConfig.RecentlyAdded }
+            .filter { (_, row) -> recentlyAdded && row.rowType is HomeRowConfig.RecentlyAdded }
             .map { (rowIndex, row) ->
                 row.items.withIndex().mapNotNull { (column, item) ->
                     item?.takeIf { !it.played }?.let { RowColumn(rowIndex, column) to it }

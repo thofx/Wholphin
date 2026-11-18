@@ -107,6 +107,17 @@ class SpotlightDataTest {
     }
 
     @Test
+    fun sourcesCanBeTurnedOff() {
+        val rows =
+            listOf(
+                row(HomeRowConfig.ContinueWatching(), movie("resumed", positionTicks = 10)),
+                row(recent, movie("m1")),
+            )
+        assertEquals(listOf("resumed"), buildSpotlight(rows, recentlyAdded = false).map { it.item.name })
+        assertEquals(listOf("m1"), buildSpotlight(rows, maxResumed = 0).map { it.item.name })
+    }
+
+    @Test
     fun limitsTheCount() {
         val rows = listOf(row(recent, *Array(20) { movie("m$it") }))
         assertEquals(7, buildSpotlight(rows).size)

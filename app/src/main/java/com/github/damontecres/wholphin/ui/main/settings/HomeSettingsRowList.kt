@@ -40,6 +40,8 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.services.HomeRowConfigDisplay
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.components.Button
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
+import com.github.damontecres.wholphin.ui.main.nova.SpotlightSettingsItem
 import com.github.damontecres.wholphin.ui.rememberInt
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlinx.coroutines.launch
@@ -167,6 +169,9 @@ fun HomeSettingsRowList(
             item {
                 TitleText(stringResource(R.string.home_rows) + " (${state.rows.size})")
                 HorizontalDivider()
+                // Nova: the spotlight sits above the rows; its settings are the fork's own.
+                // In this item so the list indices the row moves scroll to stay the same.
+                if (NOVA_HOME_ENABLED) SpotlightSettingsItem()
             }
             itemsIndexed(state.rows, key = { _, row -> row.id }) { index, row ->
                 HomeRowConfigContent(
