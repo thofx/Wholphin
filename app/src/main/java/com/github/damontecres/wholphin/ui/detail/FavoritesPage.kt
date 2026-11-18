@@ -31,6 +31,8 @@ import com.github.damontecres.wholphin.ui.components.LoadingPage
 import com.github.damontecres.wholphin.ui.components.defaultViewOptions
 import com.github.damontecres.wholphin.ui.components.rememberContextMenu
 import com.github.damontecres.wholphin.ui.data.rememberSortOptions
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
+import com.github.damontecres.wholphin.ui.main.nova.NovaFavoritesEmpty
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 
 @Composable
@@ -53,6 +55,10 @@ fun FavoritesPage(
         FavoritesLoadingState.Pending,
         -> {
             LoadingPage(modifier)
+        }
+
+        FavoritesLoadingState.NoFavorites if NOVA_HOME_ENABLED -> {
+            NovaFavoritesEmpty(onGoHome = viewModel.navigationManager::goToHome, modifier = modifier)
         }
 
         FavoritesLoadingState.NoFavorites -> {

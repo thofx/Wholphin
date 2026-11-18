@@ -43,22 +43,24 @@ fun QuickDetails(
     val enabled = LocalInterfaceCustomization.current.enabledDisplayToggles
     val inlineContentMap = rememberQuickDetailsContentMap(textStyle)
     Row(modifier = modifier) {
+        // Baseline aligned: the rating icons make their part taller, top alignment raised its text
+        val aligned = Modifier.alignByBaseline()
         if (details != null) {
-            QuickDetailsText(details.basic, Modifier, textStyle, inlineContentMap)
+            QuickDetailsText(details.basic, aligned, textStyle, inlineContentMap)
             if (DisplayToggle.OFFICIAL_RATING in enabled) {
-                QuickDetailsText(details.officialRating, Modifier, textStyle, inlineContentMap)
+                QuickDetailsText(details.officialRating, aligned, textStyle, inlineContentMap)
             }
             if (DisplayToggle.COMMUNITY_RATING in enabled) {
-                QuickDetailsText(details.communityRating, Modifier, textStyle, inlineContentMap)
+                QuickDetailsText(details.communityRating, aligned, textStyle, inlineContentMap)
             }
             if (DisplayToggle.CRITIC_RATING in enabled) {
-                QuickDetailsText(details.criticRating, Modifier, textStyle, inlineContentMap)
+                QuickDetailsText(details.criticRating, aligned, textStyle, inlineContentMap)
             }
         }
         if (timeRemaining != null) {
-            TimeRemaining(timeRemaining, textStyle = textStyle)
+            TimeRemaining(timeRemaining, aligned, textStyle = textStyle)
         } else if (endsAt != null) {
-            EndsAt(endsAt, textStyle = textStyle)
+            EndsAt(endsAt, aligned, textStyle = textStyle)
         }
     }
 }

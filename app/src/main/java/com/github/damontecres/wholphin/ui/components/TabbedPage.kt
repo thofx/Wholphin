@@ -26,6 +26,7 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.RememberedTabService
 import com.github.damontecres.wholphin.services.UserPreferencesService
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.main.nova.NovaTabHeader
 import com.github.damontecres.wholphin.ui.util.ResStringProvider
 import com.github.damontecres.wholphin.ui.util.StringProvider
 import dagger.assisted.Assisted
@@ -169,14 +170,14 @@ fun TabbedPage(
             enter = expandVertically(),
             exit = shrinkVertically(),
         ) {
-            TabRow(
-                selectedTabIndex = selectedTabIndex,
-                modifier =
-                    Modifier
-                        .padding(top = 16.dp, bottom = 16.dp, end = endPadding),
-                tabs = tabs,
-                onClick = updateSelectedTabIndex,
-            )
+            // Nova: the page title goes before the tabs
+            NovaTabHeader(Modifier.padding(top = 16.dp, bottom = 16.dp, end = endPadding)) {
+                TabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    tabs = tabs,
+                    onClick = updateSelectedTabIndex,
+                )
+            }
         }
         selectedTabIndex.let { tabIndex ->
             if (tabIndex in tabs.indices) {
@@ -214,14 +215,14 @@ fun <T> KeyedTabbedPage(
             enter = expandVertically(),
             exit = shrinkVertically(),
         ) {
-            KeyedTabRow(
-                selectedTabKey = selectedTabKey,
-                modifier =
-                    Modifier
-                        .padding(top = 16.dp, bottom = 16.dp, end = endPadding),
-                tabs = tabs,
-                onClick = updateSelectedTabKey,
-            )
+            // Nova: the page title goes before the tabs
+            NovaTabHeader(Modifier.padding(top = 16.dp, bottom = 16.dp, end = endPadding)) {
+                KeyedTabRow(
+                    selectedTabKey = selectedTabKey,
+                    tabs = tabs,
+                    onClick = updateSelectedTabKey,
+                )
+            }
         }
         AnimatedContent(
             targetState = selectedTabKey,

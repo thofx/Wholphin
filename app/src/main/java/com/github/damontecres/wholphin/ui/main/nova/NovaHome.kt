@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,11 +18,14 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -38,6 +42,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -53,10 +58,12 @@ import com.github.damontecres.wholphin.data.model.JellyfinServer
 import com.github.damontecres.wholphin.data.model.JellyfinUser
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SetupDestination
+import com.github.damontecres.wholphin.ui.components.TimeDisplay
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.nav.DestinationContent
 import com.github.damontecres.wholphin.ui.nav.NavDrawerItem
 import com.github.damontecres.wholphin.ui.nav.NavDrawerViewModel
+import com.github.damontecres.wholphin.ui.nav.ServerNavDrawerItem
 import com.github.damontecres.wholphin.ui.playback.theater.TheaterColors
 import com.github.damontecres.wholphin.ui.preferences.PreferenceScreenOption
 import com.github.damontecres.wholphin.ui.setup.UserIconCardImage
@@ -72,11 +79,127 @@ const val NOVA_HOME_ENABLED = true
 /** The top bar, provided by [NovaHomeFrame] so [NovaHomeContent] can lay it out and hide it */
 internal val LocalNovaTopBar = staticCompositionLocalOf<(@Composable (Modifier, FocusRequester) -> Unit)?> { null }
 
+/** Title of the current page (a library, favorites) shown before its tabs; null when it has none */
+internal val LocalNovaPageTitle = staticCompositionLocalOf<String?> { null }
+
+/**
+ * Hosts the pages that upstream shows in the nav drawer. Nova has no drawer: the home page has the top bar, every
+ * other page is entered from it and left with back, showing its title before its tabs.
+ */
+@Composable
+fun NovaFrame(
+    destination: Destination,
+    preferences: UserPreferences,
+    user: JellyfinUser,
+    server: JellyfinServer,
+    onClearBackdrop: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (destination is Destination.Home) {
+        NovaHomeFrame(destination, preferences, user, server, onClearBackdrop, modifier)
+    } else {
+        NovaPageFrame(destination, preferences, user, server, onClearBackdrop, modifier)
+    }
+}
+
+@Composable
+private fun NovaPageFrame(
+    destination: Destination,
+    preferences: UserPreferences,
+    user: JellyfinUser,
+    server: JellyfinServer,
+    onClearBackdrop: () -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: NavDrawerViewModel =
+        hiltViewModel(
+            LocalView.current.findViewTreeViewModelStoreOwner()!!,
+            key = "${server.id}_${user.id}",
+        ),
+) {
+    val context = LocalContext.current
+    val serviceState by viewModel.serviceState.collectAsState()
+    // The name the top bar showed for it; libraries matched by id, wherever they were opened from
+    val title =
+        remember(destination, serviceState, context) {
+            when (destination) {
+                Destination.Favorites -> {
+                    NavDrawerItem.Favorites.name(context)
+                }
+
+                Destination.Discover -> {
+                    NavDrawerItem.Discover.name(context)
+                }
+
+                else -> {
+                    (serviceState.items + serviceState.moreItems)
+                        .filterIsInstance<ServerNavDrawerItem>()
+                        .firstOrNull {
+                            it.destination == destination ||
+                                (destination is Destination.MediaItem && destination.itemId == it.itemId)
+                        }?.name
+                }
+            }
+        }
+    CompositionLocalProvider(LocalNovaPageTitle provides title) {
+        Box(modifier = modifier.fillMaxSize()) {
+            DestinationContent(
+                destination = destination,
+                preferences = preferences,
+                onClearBackdrop = onClearBackdrop,
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(start = 32.dp, end = 16.dp),
+            )
+            if (preferences.appPreferences.interfacePreferences.showClock) {
+                TimeDisplay()
+            }
+        }
+    }
+}
+
+/**
+ * A tabbed page's header: the page title (see [LocalNovaPageTitle]) then its [tabs]. Without a title, just the tabs.
+ */
+@Composable
+fun NovaTabHeader(
+    modifier: Modifier = Modifier,
+    tabs: @Composable () -> Unit,
+) {
+    val title = LocalNovaPageTitle.current
+    if (title == null) {
+        Box(modifier) { tabs() }
+        return
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
+        // Not focusable: back is the remote's back key
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
+            modifier = Modifier.size(28.dp),
+        )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+        )
+        Box(
+            Modifier
+                .padding(start = 20.dp, end = 12.dp)
+                .size(width = 1.dp, height = 24.dp)
+                .drawBehind { drawRect(Color.White.copy(alpha = .25f)) },
+        )
+        tabs()
+    }
+}
+
 /**
  * Hosts the home page without the nav drawer, giving it the top bar instead
  */
 @Composable
-fun NovaHomeFrame(
+private fun NovaHomeFrame(
     destination: Destination,
     preferences: UserPreferences,
     user: JellyfinUser,
@@ -288,3 +411,60 @@ internal fun novaPillColors(
     focusedContainerColor = TheaterColors.Text,
     focusedContentColor = TheaterColors.Dark,
 )
+
+/**
+ * Favorites without any: how to add some, and a focusable way out instead of a lone line of text
+ */
+@Composable
+fun NovaFavoritesEmpty(
+    onGoHome: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+    val accent = TheaterColors.accent
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = modifier.fillMaxSize(),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier =
+                Modifier
+                    .size(60.dp)
+                    .drawBehind { drawCircle(accent.copy(alpha = .18f)) },
+        ) {
+            Icon(Icons.Default.FavoriteBorder, contentDescription = null, tint = accent, modifier = Modifier.size(30.dp))
+        }
+        Text(
+            text = stringResource(R.string.nova_favorites_empty_title),
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 18.dp),
+        )
+        Text(
+            text = stringResource(R.string.nova_favorites_empty_hint),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = .72f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        Surface(
+            onClick = onGoHome,
+            shape = ClickableSurfaceDefaults.shape(CircleShape),
+            colors = novaPillColors(containerColor = Color.White.copy(alpha = .16f)),
+            scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+            modifier =
+                Modifier
+                    .padding(top = 24.dp)
+                    .focusRequester(focusRequester),
+        ) {
+            Text(
+                text = stringResource(R.string.nova_go_home),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp),
+            )
+        }
+    }
+}

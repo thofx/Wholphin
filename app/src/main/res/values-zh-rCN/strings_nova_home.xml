@@ -8,4 +8,7 @@
     <string name="nova_spotlight_count">数量</string>
     <string name="nova_spotlight_auto_rotate">自动轮播</string>
     <string name="nova_spotlight_seconds">%1$d 秒</string>
+    <string name="nova_favorites_empty_title">还没有收藏</string>
+    <string name="nova_favorites_empty_hint">在任意影片或剧集上长按确认键，选择「收藏」\n收藏的内容会按类型出现在这里</string>
+    <string name="nova_go_home">返回首页</string>
 </resources>

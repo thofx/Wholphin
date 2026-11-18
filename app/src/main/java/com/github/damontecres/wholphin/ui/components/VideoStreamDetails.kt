@@ -2,10 +2,12 @@ package com.github.damontecres.wholphin.ui.components
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -44,6 +47,7 @@ import com.github.damontecres.wholphin.ui.util.StreamFormatting.resolutionString
 import com.github.damontecres.wholphin.util.languageName
 import org.jellyfin.sdk.model.api.MediaSourceInfo
 import org.jellyfin.sdk.model.api.MediaStream
+import org.jellyfin.sdk.model.api.VideoRange
 
 @Composable
 @NonRestartableComposable
@@ -71,7 +75,8 @@ fun VideoStreamDetails(
 ) {
     val resources = LocalResources.current
     Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier,
     ) {
         val video =
@@ -104,6 +109,7 @@ fun VideoStreamDetails(
             StreamLabel(
                 text = it,
                 count = numberOfVersions,
+                highlight = videoStream?.videoRange == VideoRange.HDR,
             )
         }
         videoStream?.codec?.uppercase()?.let {
@@ -117,18 +123,24 @@ fun VideoStreamDetails(
                     resources.getString(R.string.none)
                 } else {
                     listOfNotNull(
-                        languageName(audioStream.language),
+                        knownLanguageName(audioStream.language),
                         formatAudioCodec(resources, audioStream.codec, audioStream.profile),
                         audioStream.channelLayout,
                     ).joinToString(" ")
                 }
             }
-        StreamLabel(
-            text = audio,
-            count = audioCount,
-            icon = R.string.fa_volume_high,
-            modifier = Modifier.widthIn(max = 200.dp),
-        )
+        val immersiveAudio =
+            audioStream?.profile?.let { it.contains("Atmos", true) || it.contains("DTS:X", true) } == true
+        // Nothing known about the audio (no language, codec or layout): no label rather than an empty one
+        if (audio.isNotBlank()) {
+            StreamLabel(
+                text = audio,
+                count = audioCount,
+                icon = R.string.fa_volume_high,
+                highlight = immersiveAudio,
+                modifier = Modifier.widthIn(max = 200.dp),
+            )
+        }
 
         val subtitleCount =
             remember(source) {
@@ -145,7 +157,7 @@ fun VideoStreamDetails(
                 } else {
                     disabled = false
                     listOfNotNull(
-                        languageName(subtitleStream.language),
+                        knownLanguageName(subtitleStream.language),
                         "SDH".takeIf { subtitleStream.isHearingImpaired },
                         formatSubtitleCodec(subtitleStream.codec),
                     ).joinToString(" ")
@@ -163,6 +175,12 @@ fun VideoStreamDetails(
     }
 }
 
+/** The language's name, or null when it is not known (no "Unknown" in the labels) */
+private fun knownLanguageName(code: String?): String? = code?.takeIf { it.isNotBlank() && it != "und" }?.let(::languageName)
+
+/** Gold for the specs worth showing off (HDR / Dolby Vision, Atmos / DTS:X), the same in every theme */
+private val PremiumColor = Color(0xFFE5B45A)
+
 @Composable
 fun StreamLabel(
     text: String,
@@ -170,17 +188,24 @@ fun StreamLabel(
     @StringRes icon: Int? = null,
     count: Int = 0,
     disabled: Boolean = false,
+    highlight: Boolean = false,
 ) {
+    // Fixed height: icon and CJK glyphs have taller line heights and made some labels bigger than others
+    val shape = RoundedCornerShape(6.dp)
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
         modifier =
             modifier
+                .heightIn(min = 24.dp)
                 .background(
-                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f),
-//                    MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(4.dp),
-                ).padding(vertical = 4.dp, horizontal = 6.dp),
+                    if (highlight) PremiumColor.copy(alpha = .14f) else MaterialTheme.colorScheme.onSurface.copy(alpha = .08f),
+                    shape,
+                ).border(
+                    1.dp,
+                    if (highlight) PremiumColor.copy(alpha = .8f) else MaterialTheme.colorScheme.onSurface.copy(alpha = .16f),
+                    shape,
+                ).padding(horizontal = 8.dp),
     ) {
         ProvideTextStyle(
             TextStyle(
@@ -193,6 +218,8 @@ fun StreamLabel(
                 Text(
                     text = stringResource(icon),
                     fontFamily = FontAwesome,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .7f),
                     modifier = Modifier,
                 )
             }

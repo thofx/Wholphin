@@ -8,4 +8,7 @@
     <string name="nova_spotlight_count">Items</string>
     <string name="nova_spotlight_auto_rotate">Auto rotate</string>
     <string name="nova_spotlight_seconds">%1$d s</string>
+    <string name="nova_favorites_empty_title">No favorites yet</string>
+    <string name="nova_favorites_empty_hint">Long press OK on any movie or show and choose \"Favorite\".\nYour favorites appear here by type.</string>
+    <string name="nova_go_home">Back to home</string>
 </resources>
