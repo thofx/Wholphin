@@ -431,7 +431,7 @@ private fun buildAudioStreamInfo(
         val sampleRateUnit = resources.getString(R.string.sample_rate_unit)
 
         stream.title?.let { add(titleLabel to it) }
-        stream.language?.let { add(languageLabel to languageName(it)) }
+        languageName(stream.language)?.let { add(languageLabel to it) }
         stream.codec?.let {
             val formattedCodec = formatAudioCodec(resources, it, stream.profile) + " ($it)"
             add(codecLabel to formattedCodec)
@@ -461,7 +461,7 @@ private fun buildSubtitleStreamInfo(
         val pathLabel = resources.getString(R.string.path)
 
         stream.title?.let { add(titleLabel to it) }
-        stream.language?.let { add(languageLabel to languageName(it)) }
+        languageName(stream.language)?.let { add(languageLabel to it) }
         stream.codec?.let {
             val formattedCodec = formatSubtitleCodec(it) + " ($it)"
             add(codecLabel to formattedCodec)

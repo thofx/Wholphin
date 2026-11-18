@@ -70,8 +70,7 @@ data class TrackSupport(
                         if (split.size > 1) split[1] else codecs
                     }
                 }
-            val language = languageName(format.language)
-            "$language ($type)"
+            listOfNotNull(languageName(format.language), "($type)").joinToString(" ")
         }
 }
 
@@ -171,16 +170,15 @@ fun checkForSupport(tracks: Tracks): List<TrackSupport> =
         }
     }
 
-fun languageName(code: String?): String =
-    if (code == "und") {
-        "Unknown"
-    } else if (code != null) {
+/** The language's display name, or null when the stream does not say ("und" is undetermined) */
+fun languageName(code: String?): String? =
+    if (code.isNullOrBlank() || code == "und") {
+        null
+    } else {
         try {
             Locale(code).displayLanguage
         } catch (ex: Exception) {
             Timber.w(ex, "Error in locale for '$code'")
             code.uppercase()
         }
-    } else {
-        "Unknown"
     }

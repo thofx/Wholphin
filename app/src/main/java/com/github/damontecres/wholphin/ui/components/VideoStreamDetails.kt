@@ -123,7 +123,7 @@ fun VideoStreamDetails(
                     resources.getString(R.string.none)
                 } else {
                     listOfNotNull(
-                        knownLanguageName(audioStream.language),
+                        languageName(audioStream.language),
                         formatAudioCodec(resources, audioStream.codec, audioStream.profile),
                         audioStream.channelLayout,
                     ).joinToString(" ")
@@ -157,7 +157,7 @@ fun VideoStreamDetails(
                 } else {
                     disabled = false
                     listOfNotNull(
-                        knownLanguageName(subtitleStream.language),
+                        languageName(subtitleStream.language),
                         "SDH".takeIf { subtitleStream.isHearingImpaired },
                         formatSubtitleCodec(subtitleStream.codec),
                     ).joinToString(" ")
@@ -174,9 +174,6 @@ fun VideoStreamDetails(
         }
     }
 }
-
-/** The language's name, or null when it is not known (no "Unknown" in the labels) */
-private fun knownLanguageName(code: String?): String? = code?.takeIf { it.isNotBlank() && it != "und" }?.let(::languageName)
 
 /** Gold for the specs worth showing off (HDR / Dolby Vision, Atmos / DTS:X), the same in every theme */
 private val PremiumColor = Color(0xFFE5B45A)

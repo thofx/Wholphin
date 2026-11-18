@@ -152,7 +152,7 @@ object StreamFormatting {
     ): String {
         val name =
             buildList {
-                add(languageName(stream.language))
+                languageName(stream.language)?.let(::add)
                 if (stream.type == MediaStreamType.AUDIO) {
                     add(formatAudioCodec(resources, stream.codec, stream.profile))
                     add(stream.channelLayout)
