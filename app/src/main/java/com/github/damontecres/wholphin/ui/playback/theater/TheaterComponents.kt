@@ -50,6 +50,9 @@ object TheaterColors {
     /** Fixed status color for the transcoding tag, independent of the theme */
     val Transcoding = Color(0xFFF5B544)
 
+    /** Premium specs (HDR), the same gold as the details page's stream labels */
+    val Premium = Color(0xFFE5B45A)
+
     /** Theme accent, same color the upstream seek bar uses */
     val accent: Color
         @Composable get() = MaterialTheme.colorScheme.border
@@ -256,18 +259,22 @@ fun SpecTag(
     text: String,
     modifier: Modifier = Modifier,
     filled: Color? = null,
+    borderColor: Color = TheaterColors.Text.copy(alpha = .5f),
 ) {
     val shape = RoundedCornerShape(4.dp)
+    // Fixed height: CJK text (e.g. the transcoding tag) has a taller line height and made its tag bigger
     Box(
+        contentAlignment = Alignment.Center,
         modifier =
             modifier
+                .height(22.dp)
                 .then(
                     if (filled != null) {
                         Modifier.background(filled, shape)
                     } else {
-                        Modifier.border(1.dp, TheaterColors.Text.copy(alpha = .5f), shape)
+                        Modifier.border(1.dp, borderColor, shape)
                     },
-                ).padding(horizontal = 6.dp, vertical = 2.dp),
+                ).padding(horizontal = 6.dp),
     ) {
         Text(
             text = text,

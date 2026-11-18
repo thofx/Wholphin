@@ -513,9 +513,9 @@ private fun SpecTags(playback: PlaybackState) {
     val video = playback.currentMediaInfo.videoStream
     val transcoding = playback.currentPlayback?.playMethod == PlayMethod.TRANSCODE
     if (video?.is4k != true && video?.hdr != true && !transcoding) return
-    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         if (video?.is4k == true) SpecTag("4K")
-        if (video?.hdr == true) SpecTag("HDR")
+        if (video?.hdr == true) SpecTag("HDR", borderColor = TheaterColors.Premium)
         if (transcoding) SpecTag(stringResource(R.string.transcoding), filled = TheaterColors.Transcoding)
     }
 }
