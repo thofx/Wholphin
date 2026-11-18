@@ -515,6 +515,7 @@ fun PlaybackPageContent(
                     onPlayItem = viewModel::playItemInPlaylist,
                     onSkipSegment = { viewModel.updateSegment(state.currentSegment?.segment?.id, false) },
                     onRequestPlayerFocus = { focusRequester.tryRequestFocus() },
+                    serverBaseUrl = viewModel.api.baseUrl,
                     modifier =
                         Modifier
                             .padding(WindowInsets.systemBars.asPaddingValues())

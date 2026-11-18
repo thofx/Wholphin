@@ -50,6 +50,14 @@ object TheaterIcons {
                     "M19 10.2a1.8 1.8 0 1 0 0 3.6a1.8 1.8 0 1 0 0 -3.6z",
                 ),
         )
+    val Danmaku =
+        icon(
+            stroke =
+                listOf(
+                    "M5 5h14a2 2 0 0 1 2 2v9a2 2 0 0 1 -2 2H10l-4 3v-3H5a2 2 0 0 1 -2 -2V7a2 2 0 0 1 2 -2z",
+                    "M7 9.5h10M7 13h6",
+                ),
+        )
     val Skip =
         icon(fill = listOf("M4 5.5v13L13 12zM13 5.5v13L22 12z"))
     val Check =

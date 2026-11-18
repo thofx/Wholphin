@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.playback.theater
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -492,6 +493,106 @@ private fun <T> OptionsList(
                 onClick = { onSelect(option) },
                 modifier = Modifier.focusIf(index == initialIndex, focusRequester),
             )
+        }
+    }
+}
+
+/** A danmaku setting row: its title, option labels, the current option and how choosing one changes the settings */
+private class DanmakuOption(
+    val title: String,
+    val labels: List<String>,
+    val currentIndex: Int,
+    val select: (Int) -> DanmakuSettings,
+)
+
+@Composable
+private fun <T> danmakuOption(
+    settings: DanmakuSettings,
+    @StringRes title: Int,
+    options: List<T>,
+    current: T,
+    label: @Composable (T) -> String,
+    apply: DanmakuSettings.(T) -> DanmakuSettings,
+) = DanmakuOption(
+    title = stringResource(title),
+    labels = options.map { label(it) },
+    currentIndex = options.indexOf(current),
+    select = { settings.apply(options[it]) },
+)
+
+/**
+ * Danmaku on/off and display settings. Same interaction as [MorePanel]: a row opens its options in place.
+ */
+@Composable
+fun DanmakuPanel(
+    settings: DanmakuSettings,
+    onChange: (DanmakuSettings) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val percent: @Composable (Int) -> String = { "$it%" }
+    val rows =
+        listOf(
+            danmakuOption(settings, R.string.theater_danmaku_density, DanmakuDensities, settings.densityPercent, percent) {
+                copy(densityPercent = it)
+            },
+            danmakuOption(settings, R.string.theater_danmaku_opacity, DanmakuOpacities, settings.opacityPercent, percent) {
+                copy(opacityPercent = it)
+            },
+            danmakuOption(settings, R.string.theater_danmaku_area, DanmakuArea.entries, settings.area, { stringResource(it.label) }) {
+                copy(area = it)
+            },
+            danmakuOption(settings, R.string.theater_danmaku_speed, DanmakuSpeed.entries, settings.speed, { stringResource(it.label) }) {
+                copy(speed = it)
+            },
+            danmakuOption(settings, R.string.theater_danmaku_size, DanmakuSize.entries, settings.size, { stringResource(it.label) }) {
+                copy(size = it)
+            },
+        )
+    // Index into rows of the open options list, null for the rows themselves
+    var openRow by remember { mutableStateOf<Int?>(null) }
+    BackHandler(enabled = openRow != null) { openRow = null }
+
+    val row = openRow?.let { rows[it] }
+    if (row != null) {
+        OptionsList(
+            title = row.title,
+            options = row.labels.indices.toList(),
+            current = row.currentIndex,
+            label = { row.labels[it] },
+            onSelect = {
+                onChange(row.select(it))
+                openRow = null
+            },
+            modifier = modifier,
+        )
+        return
+    }
+    val focusRequester = remember { FocusRequester() }
+    PanelFrame(
+        title = stringResource(R.string.theater_danmaku),
+        initialIndex = 0,
+        focusRequester = focusRequester,
+        modifier = modifier,
+    ) {
+        item {
+            PanelItem(
+                headline = stringResource(R.string.theater_danmaku_show),
+                trailingText = stringResource(if (settings.enabled) R.string.theater_on else R.string.theater_off),
+                onClick = { onChange(settings.copy(enabled = !settings.enabled)) },
+                modifier = Modifier.focusRequester(focusRequester),
+            )
+        }
+        item { PanelDivider() }
+        rows.forEachIndexed { index, option ->
+            item {
+                PanelItem(
+                    headline = option.title,
+                    trailingText = option.labels.getOrNull(option.currentIndex),
+                    showChevron = true,
+                    enabled = settings.enabled,
+                    onClick = { openRow = index },
+                )
+            }
         }
     }
 }

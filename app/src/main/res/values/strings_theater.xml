@@ -5,4 +5,20 @@
     <string name="theater_debug_info">Debug info</string>
     <string name="theater_on">On</string>
     <string name="theater_off">Off</string>
+    <string name="theater_danmaku">Danmaku</string>
+    <string name="theater_danmaku_show">Show danmaku</string>
+    <string name="theater_danmaku_density">Density</string>
+    <string name="theater_danmaku_opacity">Opacity</string>
+    <string name="theater_danmaku_area">Display area</string>
+    <string name="theater_danmaku_area_quarter">Top quarter</string>
+    <string name="theater_danmaku_area_half">Top half</string>
+    <string name="theater_danmaku_area_full">Full screen</string>
+    <string name="theater_danmaku_speed">Speed</string>
+    <string name="theater_danmaku_slow">Slow</string>
+    <string name="theater_danmaku_normal">Normal</string>
+    <string name="theater_danmaku_fast">Fast</string>
+    <string name="theater_danmaku_size">Text size</string>
+    <string name="theater_danmaku_small">Small</string>
+    <string name="theater_danmaku_medium">Medium</string>
+    <string name="theater_danmaku_large">Large</string>
 </resources>

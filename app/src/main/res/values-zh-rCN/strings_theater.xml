@@ -5,4 +5,20 @@
     <string name="theater_debug_info">调试信息</string>
     <string name="theater_on">开</string>
     <string name="theater_off">关</string>
+    <string name="theater_danmaku">弹幕</string>
+    <string name="theater_danmaku_show">显示弹幕</string>
+    <string name="theater_danmaku_density">密度</string>
+    <string name="theater_danmaku_opacity">不透明度</string>
+    <string name="theater_danmaku_area">显示区域</string>
+    <string name="theater_danmaku_area_quarter">上 1/4</string>
+    <string name="theater_danmaku_area_half">上半屏</string>
+    <string name="theater_danmaku_area_full">全屏</string>
+    <string name="theater_danmaku_speed">速度</string>
+    <string name="theater_danmaku_slow">慢</string>
+    <string name="theater_danmaku_normal">正常</string>
+    <string name="theater_danmaku_fast">快</string>
+    <string name="theater_danmaku_size">字号</string>
+    <string name="theater_danmaku_small">小</string>
+    <string name="theater_danmaku_medium">中</string>
+    <string name="theater_danmaku_large">大</string>
 </resources>

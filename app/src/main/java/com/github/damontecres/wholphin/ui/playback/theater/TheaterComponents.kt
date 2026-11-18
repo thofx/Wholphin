@@ -59,7 +59,7 @@ object TheaterColors {
 private val ButtonHeight = 56.dp
 
 /** Width of the buttons that show a current value, so they line up regardless of the value's length */
-val ValueButtonWidth = 196.dp
+val ValueButtonWidth = 168.dp
 
 @Composable
 fun TheaterIcon(
@@ -118,8 +118,9 @@ fun TheaterValueButton(
     value: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    width: Dp = ValueButtonWidth,
 ) {
-    TheaterButton(onClick = onClick, modifier = modifier.width(ValueButtonWidth)) {
+    TheaterButton(onClick = onClick, modifier = modifier.width(width)) {
         TheaterIcon(icon)
         Column(modifier = Modifier.weight(1f)) {
             Text(

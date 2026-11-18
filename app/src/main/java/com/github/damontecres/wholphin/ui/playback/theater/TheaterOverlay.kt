@@ -10,6 +10,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
@@ -31,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -92,6 +95,7 @@ fun TheaterOverlay(
     onPlayItem: (BaseItem) -> Unit,
     onSkipSegment: () -> Unit,
     onRequestPlayerFocus: () -> Unit,
+    serverBaseUrl: String?,
     modifier: Modifier = Modifier,
 ) {
     // State 3 -> 2, states 1 & 2 -> 0. Not enabled in state 0, so the page's handlers run there.
@@ -110,6 +114,16 @@ fun TheaterOverlay(
     val item = playback.currentPlayback?.item
     val chapters = playback.currentMediaInfo.chapters
     val queue = remember(playback.playlist) { playback.playlist.items.map { it.item } }
+
+    // Danmaku for the current item, empty when there are none (or the server has no danmu plugin)
+    val danmakuSettings = rememberDanmakuSettings()
+    val itemId = item?.id
+    val context = LocalContext.current
+    val httpClient = remember(context) { context.danmakuHttpClient() }
+    val danmaku by produceState(emptyList<Danmaku>(), serverBaseUrl, itemId) {
+        value = emptyList()
+        if (serverBaseUrl != null && itemId != null) value = DanmakuLoader.load(httpClient, serverBaseUrl, itemId)
+    }
 
     // Poll the position while visible, for the progress bar, chapter & end time
     var positionMs by remember { mutableLongStateOf(player.currentPosition) }
@@ -148,6 +162,15 @@ fun TheaterOverlay(
     val panelOpen = state.panel != null
 
     Box(modifier = modifier) {
+        if (danmakuSettings.value.enabled && danmaku.isNotEmpty()) {
+            DanmakuLayer(
+                items = danmaku,
+                player = player,
+                settings = danmakuSettings.value,
+                dimmed = state.visible && state.panel == null,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
         // Scrims
         AnimatedVisibility(
             visible = state.visible && !panelOpen,
@@ -246,6 +269,8 @@ fun TheaterOverlay(
                         settings = settings,
                         currentChapterIndex = currentChapterIndex,
                         hasQueue = queue.size > 1,
+                        hasDanmaku = danmaku.isNotEmpty(),
+                        danmakuEnabled = danmakuSettings.value.enabled,
                         onSkipSegment = onSkipSegment,
                         modifier = Modifier.padding(top = 16.dp),
                     )
@@ -323,6 +348,13 @@ fun TheaterOverlay(
                                 onPlayItem(selected)
                             }
                         },
+                    )
+                }
+
+                TheaterPanel.DANMAKU -> {
+                    DanmakuPanel(
+                        settings = danmakuSettings.value,
+                        onChange = danmakuSettings::update,
                     )
                 }
 
@@ -606,6 +638,9 @@ private fun ButtonRow(
     settings: PlaybackSettings,
     currentChapterIndex: Int,
     hasQueue: Boolean,
+    // The danmaku button only shows when the item has danmaku
+    hasDanmaku: Boolean,
+    danmakuEnabled: Boolean,
     onSkipSegment: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -650,58 +685,79 @@ private fun ButtonRow(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.fillMaxWidth(),
     ) {
-        if (segment != null) {
-            TheaterButton(
-                onClick = onSkipSegment,
-                modifier = Modifier.focusRequester(skipRequester),
-            ) {
-                TheaterIcon(TheaterIcons.Skip, size = 20.dp)
-                Text(text = stringResource(R.string.skip), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-            }
-        }
-        TheaterValueButton(
-            icon = TheaterIcons.Subtitles,
-            label = stringResource(R.string.subtitles),
-            value = subtitleValue,
-            onClick = { state.openPanel(TheaterPanel.SUBTITLES) },
+        // Buttons scroll when they do not fit; focus brings the focused one into view. More stays at the end.
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
             modifier =
                 Modifier
-                    .focusRequester(requesters.getValue(TheaterPanel.SUBTITLES)),
-        )
-        if (settings.audioStreams.isNotEmpty()) {
+                    .weight(1f)
+                    .horizontalScroll(rememberScrollState())
+                    // Room for the focused button's scale-up
+                    .padding(vertical = 4.dp, horizontal = 4.dp),
+        ) {
+            if (segment != null) {
+                TheaterButton(
+                    onClick = onSkipSegment,
+                    modifier = Modifier.focusRequester(skipRequester),
+                ) {
+                    TheaterIcon(TheaterIcons.Skip, size = 20.dp)
+                    Text(text = stringResource(R.string.skip), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
             TheaterValueButton(
-                icon = TheaterIcons.Audio,
-                label = stringResource(R.string.audio),
-                value = audioValue,
-                onClick = { state.openPanel(TheaterPanel.AUDIO) },
+                icon = TheaterIcons.Subtitles,
+                label = stringResource(R.string.subtitles),
+                value = subtitleValue,
+                onClick = { state.openPanel(TheaterPanel.SUBTITLES) },
                 modifier =
                     Modifier
-                        .focusRequester(requesters.getValue(TheaterPanel.AUDIO)),
+                        .focusRequester(requesters.getValue(TheaterPanel.SUBTITLES)),
             )
+            if (settings.audioStreams.isNotEmpty()) {
+                TheaterValueButton(
+                    icon = TheaterIcons.Audio,
+                    label = stringResource(R.string.audio),
+                    value = audioValue,
+                    onClick = { state.openPanel(TheaterPanel.AUDIO) },
+                    modifier =
+                        Modifier
+                            .focusRequester(requesters.getValue(TheaterPanel.AUDIO)),
+                )
+            }
+            if (chapters.isNotEmpty()) {
+                TheaterValueButton(
+                    icon = TheaterIcons.Chapters,
+                    label = stringResource(R.string.chapters),
+                    value = chapters.getOrNull(currentChapterIndex)?.name ?: "#${currentChapterIndex + 1}",
+                    onClick = { state.openPanel(TheaterPanel.CHAPTERS) },
+                    modifier =
+                        Modifier
+                            .focusRequester(requesters.getValue(TheaterPanel.CHAPTERS)),
+                )
+            }
+            if (hasQueue) {
+                TheaterValueButton(
+                    icon = TheaterIcons.Queue,
+                    label = stringResource(R.string.queue),
+                    value = currentItem?.let { it.data.seasonEpisode ?: it.name },
+                    onClick = { state.openPanel(TheaterPanel.QUEUE) },
+                    modifier =
+                        Modifier
+                            .focusRequester(requesters.getValue(TheaterPanel.QUEUE)),
+                )
+            }
+            if (hasDanmaku) {
+                TheaterValueButton(
+                    icon = TheaterIcons.Danmaku,
+                    label = stringResource(R.string.theater_danmaku),
+                    value = stringResource(if (danmakuEnabled) R.string.theater_on else R.string.theater_off),
+                    onClick = { state.openPanel(TheaterPanel.DANMAKU) },
+                    width = 128.dp,
+                    modifier = Modifier.focusRequester(requesters.getValue(TheaterPanel.DANMAKU)),
+                )
+            }
         }
-        if (chapters.isNotEmpty()) {
-            TheaterValueButton(
-                icon = TheaterIcons.Chapters,
-                label = stringResource(R.string.chapters),
-                value = chapters.getOrNull(currentChapterIndex)?.name ?: "#${currentChapterIndex + 1}",
-                onClick = { state.openPanel(TheaterPanel.CHAPTERS) },
-                modifier =
-                    Modifier
-                        .focusRequester(requesters.getValue(TheaterPanel.CHAPTERS)),
-            )
-        }
-        if (hasQueue) {
-            TheaterValueButton(
-                icon = TheaterIcons.Queue,
-                label = stringResource(R.string.queue),
-                value = currentItem?.let { it.data.seasonEpisode ?: it.name },
-                onClick = { state.openPanel(TheaterPanel.QUEUE) },
-                modifier =
-                    Modifier
-                        .focusRequester(requesters.getValue(TheaterPanel.QUEUE)),
-            )
-        }
-        Spacer(Modifier.weight(1f))
         TheaterButton(
             onClick = { state.openPanel(TheaterPanel.MORE) },
             modifier = Modifier.focusRequester(requesters.getValue(TheaterPanel.MORE)),

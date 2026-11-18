@@ -34,6 +34,7 @@ enum class TheaterPanel {
     AUDIO,
     CHAPTERS,
     QUEUE,
+    DANMAKU,
     MORE,
 }
 
