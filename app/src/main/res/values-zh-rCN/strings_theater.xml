@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the theater playback UI (fork-only, kept separate from strings.xml to avoid merge conflicts) -->
+<resources>
+    <string name="theater_more_options">更多选项</string>
+    <string name="theater_debug_info">调试信息</string>
+    <string name="theater_on">开</string>
+    <string name="theater_off">关</string>
+</resources>

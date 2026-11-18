@@ -89,6 +89,11 @@ import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackOverlay
 import com.github.damontecres.wholphin.ui.playback.overlay.SkipIndicator
 import com.github.damontecres.wholphin.ui.playback.overlay.SkipSegmentButton
 import com.github.damontecres.wholphin.ui.playback.overlay.rememberSeekBarState
+import com.github.damontecres.wholphin.ui.playback.theater.THEATER_UI_ENABLED
+import com.github.damontecres.wholphin.ui.playback.theater.TheaterKeyHandler
+import com.github.damontecres.wholphin.ui.playback.theater.TheaterOverlay
+import com.github.damontecres.wholphin.ui.playback.theater.TheaterState
+import com.github.damontecres.wholphin.ui.playback.theater.theaterPlaybackSettings
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyTo
 import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.calculateEdgeSize
 import com.github.damontecres.wholphin.ui.seasonEpisode
@@ -274,6 +279,28 @@ fun PlaybackPageContent(
             )
         }
 
+    // Theater UI (fork): state & keys
+    val theaterState = remember { TheaterState(controllerViewState) }
+    val theaterKeyHandler =
+        remember(preferences) {
+            TheaterKeyHandler(
+                player = player,
+                state = theaterState,
+                seekForward = prefs.skipForwardMs.milliseconds,
+                seekBack = prefs.skipBackMs.milliseconds,
+                skipBackOnResume = prefs.skipBackOnResume,
+                isEnabled = { viewModel.state.value.nextUp == null },
+                onInteraction = viewModel::reportInteraction,
+                onStop = {
+                    player.stop()
+                    viewModel.navigationManager.goBack()
+                },
+                onNext = viewModel::playNextUp,
+                onPrevious = viewModel::playPrevious,
+                focusPlayer = { focusRequester.tryRequestFocus() },
+            )
+        }
+
     val onPlaybackActionClick: (PlaybackAction) -> Unit = {
         when (it) {
             is PlaybackAction.PlaybackSpeed -> {
@@ -331,14 +358,17 @@ fun PlaybackPageContent(
 
     val showSegment =
         state.currentSegment?.interacted == false &&
-            state.nextUp == null && !controllerViewState.controlsVisible && skipIndicatorDuration == 0L
+            state.nextUp == null &&
+            (if (THEATER_UI_ENABLED) theaterState.showsFloatingSkip else !controllerViewState.controlsVisible) &&
+            skipIndicatorDuration == 0L
     BackHandler(showSegment) {
         viewModel.updateSegment(state.currentSegment?.segment?.id, true)
     }
 
     Box(
         modifier
-            .background(if (state.nextUp == null) Color.Black else MaterialTheme.colorScheme.background),
+            .background(if (state.nextUp == null) Color.Black else MaterialTheme.colorScheme.background)
+            .onKeyEvent { THEATER_UI_ENABLED && theaterKeyHandler.onKeyEvent(it) },
     ) {
         val playerSize by animateFloatAsState(if (state.nextUp == null) 1f else .6f)
         Box(
@@ -346,7 +376,7 @@ fun PlaybackPageContent(
                 Modifier
                     .fillMaxSize(playerSize)
                     .align(Alignment.TopCenter)
-                    .onKeyEvent(keyHandler::onKeyEvent)
+                    .onKeyEvent { !THEATER_UI_ENABLED && keyHandler.onKeyEvent(it) }
                     .focusRequester(focusRequester)
                     .focusable(),
         ) {
@@ -470,36 +500,58 @@ fun PlaybackPageContent(
 
             // The playback controls
 
-            PlaybackOverlay(
-                modifier =
-                    Modifier
-                        .padding(WindowInsets.systemBars.asPaddingValues())
-                        .fillMaxSize()
-                        .background(Color.Transparent),
-                item = state.currentPlayback?.item,
-                player = player,
-                controllerViewState = controllerViewState,
-                showPlay = playPauseState.showPlay,
-                previousEnabled = true,
-                nextEnabled = state.hasNext,
-                seekEnabled = true,
-                seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
-                seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
-                skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
-                onPlaybackActionClick = onPlaybackActionClick,
-                onClickPlaybackDialogType = { playbackDialog = it },
-                onSeekBarChange = seekBarState::onValueChange,
-                showDebugInfo = showDebugInfo,
-                currentPlayback = state.currentPlayback,
-                chapters = state.currentMediaInfo.chapters,
-                trickplayInfo = state.currentMediaInfo.trickPlayInfo,
-                trickplayUrlFor = viewModel::getTrickplayUrl,
-                queue = remember(state.playlistIndex, state.playlist) { state.upcomingItems },
-                onClickPlaylist = viewModel::playItemInPlaylist,
-                currentSegment = state.currentSegment?.segment,
-                showClock = preferences.appPreferences.interfacePreferences.showClock,
-                analyticsState = state.analyticsState,
-            )
+            if (THEATER_UI_ENABLED) {
+                TheaterOverlay(
+                    state = theaterState,
+                    player = player,
+                    playback = state,
+                    settings = theaterPlaybackSettings(state, showDebugInfo, playbackSpeed, contentScale, userDto, playerBackend),
+                    showClock = preferences.appPreferences.interfacePreferences.showClock,
+                    enableSubtitleDelay = player is MpvPlayer,
+                    enableVideoScale = player !is MpvPlayer,
+                    trickplayUrlFor = viewModel::getTrickplayUrl,
+                    onPlaybackActionClick = onPlaybackActionClick,
+                    onChangeSubtitleDelay = { viewModel.updateSubtitleDelay(it) },
+                    onPlayItem = viewModel::playItemInPlaylist,
+                    onSkipSegment = { viewModel.updateSegment(state.currentSegment?.segment?.id, false) },
+                    onRequestPlayerFocus = { focusRequester.tryRequestFocus() },
+                    modifier =
+                        Modifier
+                            .padding(WindowInsets.systemBars.asPaddingValues())
+                            .fillMaxSize(),
+                )
+            } else {
+                PlaybackOverlay(
+                    modifier =
+                        Modifier
+                            .padding(WindowInsets.systemBars.asPaddingValues())
+                            .fillMaxSize()
+                            .background(Color.Transparent),
+                    item = state.currentPlayback?.item,
+                    player = player,
+                    controllerViewState = controllerViewState,
+                    showPlay = playPauseState.showPlay,
+                    previousEnabled = true,
+                    nextEnabled = state.hasNext,
+                    seekEnabled = true,
+                    seekForward = preferences.appPreferences.playbackPreferences.skipForwardMs.milliseconds,
+                    seekBack = preferences.appPreferences.playbackPreferences.skipBackMs.milliseconds,
+                    skipBackOnResume = preferences.appPreferences.playbackPreferences.skipBackOnResume,
+                    onPlaybackActionClick = onPlaybackActionClick,
+                    onClickPlaybackDialogType = { playbackDialog = it },
+                    onSeekBarChange = seekBarState::onValueChange,
+                    showDebugInfo = showDebugInfo,
+                    currentPlayback = state.currentPlayback,
+                    chapters = state.currentMediaInfo.chapters,
+                    trickplayInfo = state.currentMediaInfo.trickPlayInfo,
+                    trickplayUrlFor = viewModel::getTrickplayUrl,
+                    queue = remember(state.playlistIndex, state.playlist) { state.upcomingItems },
+                    onClickPlaylist = viewModel::playItemInPlaylist,
+                    currentSegment = state.currentSegment?.segment,
+                    showClock = preferences.appPreferences.interfacePreferences.showClock,
+                    analyticsState = state.analyticsState,
+                )
+            }
 
             var subtitleStyleAppliedForHdr by remember { mutableStateOf(state.currentMediaInfo.videoStream?.hdr == true) }
             val subtitleSettings =
@@ -517,7 +569,15 @@ fun PlaybackPageContent(
                 remember(subtitleSettings) { subtitleSettings.imageSubtitleOpacity / 100f }
 
             // Subtitles
-            val subtitleMaxSize by animateFloatAsState(if (controllerViewState.controlsVisible) .7f else 1f)
+            val subtitleMaxSize by animateFloatAsState(
+                if (THEATER_UI_ENABLED) {
+                    theaterState.subtitleHeightFraction
+                } else if (controllerViewState.controlsVisible) {
+                    .7f
+                } else {
+                    1f
+                },
+            )
             val isImageSubtitles =
                 remember(state.subtitleCues) { state.subtitleCues.firstOrNull()?.bitmap != null }
 
@@ -586,6 +646,7 @@ fun PlaybackPageContent(
                 },
                 modifier =
                     Modifier
+                        .padding(end = if (THEATER_UI_ENABLED) theaterState.subtitleEndPadding else 0.dp)
                         .fillMaxSize(subtitleMaxSize)
                         .align(Alignment.TopCenter)
                         .background(Color.Transparent)
