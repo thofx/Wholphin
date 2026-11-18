@@ -32,7 +32,7 @@ jobs:
       - name: Fetch upstream version tags
         run: |
           git fetch --no-tags "$UPSTREAM_REPO" '+refs/tags/v*:refs/tags/v*'
-          git describe --tags --long --match 'v*'
+          echo "VERSION_NAME=$(git describe --tags --long --match 'v*')" >> "$GITHUB_ENV"
 
       - name: Check signing secrets
         env:
@@ -60,13 +60,14 @@ jobs:
           find app/build/outputs/apk -name '*.apk' -print0 |
             xargs -0 -n1 "${ANDROID_SDK_ROOT}/build-tools/${BUILD_TOOLS_VERSION}/apksigner" verify --verbose --print-certs
 
-      # Wholphin-default-release-0.6.2-15-gabc1234-140-arm64-v8a.apk => Wholphin-nova-v1-arm64-v8a.apk
+      # The in-app updater looks for these names, like upstream's releases:
+      # Wholphin-default-release-0.6.2-15-gabc1234-140-arm64-v8a.apk => Wholphin-arm64-v8a.apk
       - name: Rename APKs
         run: |
           mkdir -p release
           find app/build/outputs/apk -name '*.apk' -print0 |
             while IFS= read -r -d '' apk; do
-              name="$(basename "$apk" | sed -E "s/-default-release-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-g[a-fA-F0-9]+-[0-9]+/-${TAG_NAME}/")"
+              name="$(basename "$apk" | sed -E 's/-default-release-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-g[a-fA-F0-9]+-[0-9]+//')"
               cp "$apk" "release/$name"
             done
           sha256sum release/*.apk
@@ -78,12 +79,15 @@ jobs:
           path: app/build/outputs/**/mapping.txt
           compression-level: 6
 
+      # The in-app updater parses the release title as the version (vX.Y.Z or vX.Y.Z-N-gHASH)
+      # and compares it with the installed one, so the title must be the version name
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "$TAG_NAME" \
-            --title "$TAG_NAME" \
+            --title "$VERSION_NAME" \
             --verify-tag \
+            --latest \
             --generate-notes \
             release/*.apk

@@ -627,7 +627,8 @@ sealed interface AppPreference<Pref, T> {
         val UpdateUrl =
             AppStringPreference<AppPreferences>(
                 title = R.string.update_url,
-                defaultValue = "https://api.github.com/repos/damontecres/Wholphin/releases/latest",
+                // Nova: this fork's releases (signed with its own key, so upstream's APKs cannot update it)
+                defaultValue = "https://api.github.com/repos/thofx/Wholphin/releases/latest",
                 getter = { it.updateUrl },
                 setter = { prefs, value ->
                     prefs.update { updateUrl = value }
