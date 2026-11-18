@@ -271,9 +271,6 @@
     <string name="reset">Standaardwaarden</string>
     <string name="bold_font">Vetgedrukt lettertype</string>
     <string name="player_backend">Afspeelbackend</string>
-    <string name="mpv_hardware_decoding">MPV: hardwareversnelling gebruiken</string>
-    <string name="disable_if_crash">Schakel uit als je crashes ervaart</string>
-    <string name="mpv_options">MPV-opties</string>
     <string name="exoplayer_options">ExoPlayer-opties</string>
     <string name="skip_segment_unknown">Segment overslaan</string>
     <string name="skip_segment_commercial">Reclame overslaan</string>
@@ -291,8 +288,6 @@
     <string name="subtitle_margin">Marge</string>
     <string name="verbose_logging">Uitgebreid logboek aanleggen</string>
     <string name="image_cache_size">Omvang van afbeeldingscache (in MB)</string>
-    <string name="mpv_use_gpu_next">Mpv: gpu-next gebruiken</string>
-    <string name="mpv_conf">mpv.conf bewerken</string>
     <string name="discard_change">Wijzigingen negeren?</string>
     <string name="enter_pin">Pincode invoeren</string>
     <string name="sign_in_auto">Automatisch inloggen</string>
@@ -450,7 +445,6 @@
     <string name="quick_connect_code">Quick Connect code invoeren</string>
     <string name="quick_connect_code_error">Code moet 6 cijfers bevatten</string>
     <string name="quick_connect_success">Apparaat succesvol geautoriseerd</string>
-    <string name="upgrade_mpv_toast">MPV is nu de standaard speler behalve voor HDR. \nU kunt dit in de instellingen wijzigen.</string>
     <string name="save_for_album">Bewaar voor album</string>
     <string name="play_slideshow">Diavoorstelling afspelen</string>
     <string name="stop_slideshow">Diavoorstelling stoppen</string>
@@ -502,8 +496,6 @@
     <string name="cyan">Cyaan</string>
     <string name="subtitle_edge_outline">Omtrek</string>
     <string name="subtitle_edge_shadow">Schaduw</string>
-    <string name="prefer_mpv">Voorkeur voor MPV</string>
-    <string name="player_backend_options_subtitles_prefer_mpv">ExoPlayer voor HDR gebruiken</string>
     <string name="aspect_ratios_square">Vierkant (1:1)</string>
     <string name="image_type_primary">Primair</string>
     <string name="image_type_thumb">Miniatuur</string>

@@ -6,7 +6,6 @@ import android.os.Build
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.annotation.VisibleForTesting
-import androidx.compose.ui.unit.Density
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -37,7 +36,6 @@ import com.github.damontecres.wholphin.data.model.Playlist
 import com.github.damontecres.wholphin.data.model.PlaylistItem
 import com.github.damontecres.wholphin.data.model.SeriesTrackChoiceType
 import com.github.damontecres.wholphin.data.model.TrackIndex
-import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ShowNextUpWhen
@@ -63,7 +61,6 @@ import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
-import com.github.damontecres.wholphin.ui.preferences.subtitle.SubtitleSettings.applyToMpv
 import com.github.damontecres.wholphin.ui.seekBack
 import com.github.damontecres.wholphin.ui.seekForward
 import com.github.damontecres.wholphin.ui.showToast
@@ -73,7 +70,8 @@ import com.github.damontecres.wholphin.util.PlaybackItemState
 import com.github.damontecres.wholphin.util.TrackActivityPlaybackListener
 import com.github.damontecres.wholphin.util.WholphinDispatchers
 import com.github.damontecres.wholphin.util.checkForSupport
-import com.github.damontecres.wholphin.util.mpv.mpvDeviceProfile
+import com.github.damontecres.wholphin.vlc.VlcPlayer
+import com.github.damontecres.wholphin.vlc.vlcDeviceProfile
 import com.github.damontecres.wholphin.util.profile.Codec
 import com.github.damontecres.wholphin.util.subtitleMimeTypes
 import com.github.damontecres.wholphin.util.supportItemKinds
@@ -109,6 +107,7 @@ import org.jellyfin.sdk.api.client.extensions.videoApi
 import org.jellyfin.sdk.api.sockets.subscribe
 import org.jellyfin.sdk.model.DeviceInfo
 import org.jellyfin.sdk.model.api.BaseItemKind
+import org.jellyfin.sdk.model.api.DeviceProfile
 import org.jellyfin.sdk.model.api.ImageType
 import org.jellyfin.sdk.model.api.MediaSegmentType
 import org.jellyfin.sdk.model.api.MediaStreamType
@@ -232,28 +231,28 @@ class PlaybackViewModel
             jobs.forEach { it.cancel() }
         }
 
-        private suspend fun createPlayer(
-            isHdr: Boolean,
-            is4k: Boolean,
-        ) {
-            val softwareDecoding =
-                !preferences.appPreferences.playbackPreferences.mpvOptions.enableHardwareDecoding
-            val requestBackend =
+        /** The backend the user picked, before any automatic switch to VLC */
+        private val requestedBackend: PlayerBackend
+            get() =
                 (destination as? Destination.Playback)?.backend
                     ?: preferences.appPreferences.playbackPreferences.playerBackend
+
+        /** Whether media ExoPlayer cannot play as is may be handed over to VLC */
+        private val vlcFallbackEnabled: Boolean
+            get() = requestedBackend == PlayerBackend.EXO_THEN_VLC && !forceTranscoding
+
+        /** Every item starts on the requested backend; EXO_THEN_VLC starts on ExoPlayer */
+        private suspend fun createPlayer() {
             val playerBackend =
-                when (requestBackend) {
-                    PlayerBackend.UNRECOGNIZED,
-                    PlayerBackend.EXO_PLAYER,
-                    -> PlayerBackend.EXO_PLAYER
-
-                    PlayerBackend.MPV -> PlayerBackend.MPV
-
-                    PlayerBackend.PREFER_MPV -> if (isHdr || (is4k && softwareDecoding)) PlayerBackend.EXO_PLAYER else PlayerBackend.MPV
-
+                when (requestedBackend) {
+                    PlayerBackend.VLC -> PlayerBackend.VLC
                     PlayerBackend.EXTERNAL_PLAYER -> throw IllegalStateException("Cannot use this for external playback")
+                    else -> PlayerBackend.EXO_PLAYER
                 }
+            switchBackend(playerBackend)
+        }
 
+        private suspend fun switchBackend(playerBackend: PlayerBackend) {
             Timber.d("Selected backend: %s", playerBackend)
             if (currentPlayer.value?.backend != playerBackend) {
                 Timber.i("Switching player backend to %s", playerBackend)
@@ -273,6 +272,16 @@ class PlaybackViewModel
                 configurePlayer()
             }
         }
+
+        private suspend fun deviceProfileFor(backend: PlayerBackend): DeviceProfile =
+            if (backend == PlayerBackend.VLC) {
+                vlcDeviceProfile
+            } else {
+                deviceProfileService.getOrCreateDeviceProfile(
+                    preferences.appPreferences,
+                    serverRepository.currentServer?.serverVersion,
+                )
+            }
 
         private fun configurePlayer() {
             player.addListener(this)
@@ -533,7 +542,7 @@ class PlaybackViewModel
                         }
 
                 // Create the correct player for the media
-                createPlayer(videoStream?.hdr == true, videoStream?.is4k == true)
+                createPlayer()
 
                 val subtitleStreams = mediaSource?.let { getSubtitleStreams(mediaSource) }.orEmpty()
                 val audioStreams = mediaSource?.let { getAudioStreams(mediaSource) }.orEmpty()
@@ -646,6 +655,7 @@ class PlaybackViewModel
 
                 state.value.currentPlayback?.let { currentPlayback ->
                     if (currentPlayback.item.id == item.id &&
+                        currentPlayback.backend == currentPlayer.value?.backend &&
                         currentPlayback.playMethod == PlayMethod.DIRECT_PLAY &&
                         enableDirectPlay &&
                         state.value.maxBitrate == maxBitrate
@@ -672,21 +682,13 @@ class PlaybackViewModel
                 )
                 _state.update { it.copy(maxBitrate = maxBitrate) }
 
-                val response by
+                suspend fun requestPlaybackInfo(deviceProfile: DeviceProfile) =
                     api.mediaInfoApi
                         .getPostedPlaybackInfo(
                             itemId,
                             PlaybackInfoDto(
                                 startTimeTicks = null,
-                                deviceProfile =
-                                    if (currentPlayer.value!!.backend == PlayerBackend.EXO_PLAYER) {
-                                        deviceProfileService.getOrCreateDeviceProfile(
-                                            preferences.appPreferences,
-                                            serverRepository.currentServer?.serverVersion,
-                                        )
-                                    } else {
-                                        mpvDeviceProfile
-                                    },
+                                deviceProfile = deviceProfile,
                                 maxAudioChannels = null,
                                 audioStreamIndex = audioIndex,
                                 subtitleStreamIndex = subtitleIndex,
@@ -700,11 +702,30 @@ class PlaybackViewModel
                                 enableTranscoding = true,
                                 autoOpenLiveStream = true,
                             ),
-                        )
+                        ).content
+
+                var response = requestPlaybackInfo(deviceProfileFor(currentPlayer.value!!.backend))
                 if (response.errorCode != null) {
                     Timber.e("Error in PostedPlaybackInfo: %s", response.errorCode)
                     _state.update { it.copy(loading = LoadingState.Error(response.errorCode?.serialName)) }
                     return@withContext
+                }
+                var switchedToVlc = false
+                // Not for live TV: each PlaybackInfo request opens a live stream
+                if (enableDirectPlay &&
+                    vlcFallbackEnabled &&
+                    item.type != BaseItemKind.TV_CHANNEL &&
+                    currentPlayer.value?.backend == PlayerBackend.EXO_PLAYER &&
+                    response.mediaSources.firstOrNull()?.supportsDirectPlay == false
+                ) {
+                    // The server would have to transcode for ExoPlayer, but VLC may play the file as is
+                    val vlcResponse = requestPlaybackInfo(vlcDeviceProfile)
+                    if (vlcResponse.errorCode == null && vlcResponse.mediaSources.firstOrNull()?.supportsDirectPlay == true) {
+                        Timber.i("ExoPlayer cannot direct play %s, switching to VLC", itemId)
+                        switchBackend(PlayerBackend.VLC)
+                        switchedToVlc = true
+                        response = vlcResponse
+                    }
                 }
                 val source = response.mediaSources.firstOrNull()
                 source?.let { source ->
@@ -741,7 +762,6 @@ class PlaybackViewModel
                     }
                     val transcodeType =
                         when {
-//                        playerBackend == PlayerBackend.MPV -> PlayMethod.DIRECT_PLAY
                             source.supportsDirectPlay -> PlayMethod.DIRECT_PLAY
 
                             source.supportsDirectStream -> PlayMethod.DIRECT_STREAM
@@ -853,13 +873,22 @@ class PlaybackViewModel
                             mediaItem,
                             positionMs,
                         )
+                        if (switchedToVlc) {
+                            // A new player: callers changing tracks mid-playback do not prepare it themselves
+                            player.prepare()
+                            player.play()
+                        }
                         val onFailure: () -> Unit = {
-                            if (player is MpvPlayer && externalSubtitle != null) {
-                                // MpvPlayer may change tracks more than once to add external subtitles
+                            if (player is VlcPlayer && externalSubtitle != null) {
+                                // VlcPlayer reports the external subtitle in a later tracks update
                                 trackChangeListener?.let { player.addListener(it) }
                             } else if (transcodeType != PlayMethod.DIRECT_PLAY) {
                                 // Already transcoding/direct streaming, retrying would give the same result and loop forever
                                 Timber.w("Failed to select tracks during %s, not retrying", transcodeType)
+                            } else if (vlcFallbackEnabled && player !is VlcPlayer) {
+                                viewModelScope.launchIO {
+                                    retryWithVlc(item, sourceId, audioIndex, subtitleIndex, positionMs)
+                                }
                             } else {
                                 viewModelScope.launchIO {
                                     changeStreams(
@@ -1422,10 +1451,43 @@ class PlaybackViewModel
             _state.update { it.copy(subtitleCues = cueGroup.cues) }
         }
 
+        /** Plays the media as is with VLC, for what ExoPlayer could not, instead of asking the server to transcode */
+        private suspend fun retryWithVlc(
+            item: BaseItem,
+            sourceId: String?,
+            audioIndex: Int?,
+            subtitleIndex: Int?,
+            positionMs: Long,
+        ) {
+            // Off the main thread: creating libVLC loads its native libraries
+            withContext(WholphinDispatchers.IO) { switchBackend(PlayerBackend.VLC) }
+            changeStreams(
+                item = item,
+                sourceId = sourceId,
+                audioIndex = audioIndex,
+                subtitleIndex = subtitleIndex,
+                positionMs = positionMs,
+                enableDirectPlay = true,
+                enableDirectStream = true,
+            )
+            onMain {
+                player.prepare()
+                player.play()
+            }
+        }
+
         override fun onPlayerError(error: PlaybackException) {
             Timber.e(error, "Playback error")
             viewModelScope.launch(WholphinDispatchers.Main + ExceptionHandler()) {
                 state.value.currentPlayback?.let {
+                    if (vlcFallbackEnabled &&
+                        currentPlayer.value?.backend == PlayerBackend.EXO_PLAYER &&
+                        it.playMethod != PlayMethod.TRANSCODE
+                    ) {
+                        Timber.w("ExoPlayer error during ${it.playMethod}, retrying with VLC")
+                        retryWithVlc(currentItem.item, it.mediaSourceInfo.id, it.audioIndex, it.subtitleIndex, player.currentPosition)
+                        return@launch
+                    }
                     when (it.playMethod) {
                         PlayMethod.TRANSCODE -> {
                             _state.update {
@@ -1694,37 +1756,6 @@ class PlaybackViewModel
 
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             screensaverService.keepScreenOn(isPlaying)
-        }
-
-        override fun onAvailableCommandsChanged(availableCommands: Player.Commands) {
-            val player = this@PlaybackViewModel.player
-            if (availableCommands.contains(Player.COMMAND_PREPARE) && player is MpvPlayer) {
-                // MpvPlayer is initialized, so configure subtitles
-                Timber.i("Applying subtitle config to MPV")
-                viewModelScope.launchDefault {
-                    val configuration = context.resources.configuration
-                    val density = Density(context.resources.displayMetrics.density)
-                    preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
-                        configuration,
-                        density,
-                    )
-                }
-            }
-        }
-
-        fun updateDensity(density: Density) {
-            Timber.d("Density changed")
-            viewModelScope.launchDefault {
-                val availableCommands = onMain { player.availableCommands }
-                if (availableCommands.contains(Player.COMMAND_PREPARE) && player is MpvPlayer) {
-                    Timber.i("Applying density change for subtitle config to MPV")
-                    val configuration = context.resources.configuration
-                    preferences.appPreferences.interfacePreferences.subtitlesPreferences.applyToMpv(
-                        configuration,
-                        density,
-                    )
-                }
-            }
         }
 
         override fun onBandwidthEstimate(

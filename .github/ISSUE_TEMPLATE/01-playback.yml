@@ -29,7 +29,7 @@ body:
       multiple: true
       options:
         - ExoPlayer (default)
-        - MPV
+        - VLC
         - External App (please specify)
     validations:
       required: true

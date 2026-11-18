@@ -79,9 +79,7 @@
     <string name="decade">Decadă</string>
     <string name="filter">Filtru</string>
     <string name="played">Redat</string>
-    <string name="mpv_options">Opțiuni MPV</string>
     <string name="exoplayer_options">Opțiuni ExoPlayer</string>
-    <string name="mpv_conf">Modifică mpv.conf</string>
     <string name="spacing">Spațiere</string>
     <string name="aspect_ratio">Rată de aspect</string>
     <string name="show_details">Înregistrare detaliată</string>
@@ -165,8 +163,6 @@
     <string name="magenta">Magenta</string>
     <string name="subtitle_edge_outline">Contur</string>
     <string name="subtitle_edge_shadow">Umbră</string>
-    <string name="prefer_mpv">Preferă MPV</string>
-    <string name="player_backend_options_subtitles_prefer_mpv">Folosește ExoPlayer pentru redare HDR</string>
     <string name="aspect_ratios_square">Pătrat (1:1)</string>
     <string name="api_key">Cheie API</string>
     <string name="seerr_login">Conectează-te la serverul Seerr</string>
@@ -284,7 +280,6 @@
     <string name="username_or_password">Folosește utilizator/parolă</string>
     <string name="request">Solicitare</string>
     <string name="pending">În așteptare</string>
-    <string name="upgrade_mpv_toast">MPV este acum playerul implicit, cu excepția conținutului HDR.\nPoți modifica aceasta din setări.</string>
     <string name="hdr_subtitle_style">Stilul subtitrărilor HDR</string>
     <string name="rotate_right">Rotește la dreapta</string>
     <string name="for_all_ages">Pentru toate vârstele</string>
@@ -385,8 +380,6 @@
     <string name="bold_blue">Albastru aldin</string>
     <string name="bold_font">Font aldin</string>
     <string name="player_backend">Motorul de redare</string>
-    <string name="mpv_hardware_decoding">MPV: Utilizează decodarea hardware</string>
-    <string name="disable_if_crash">Dezactivează această opțiune dacă aplicația se blochează</string>
     <string name="background_opacity">Opacitatea fundalului</string>
     <string name="profile">Profil</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin.util.mpv
+package com.github.damontecres.wholphin.vlc
 
 import com.github.damontecres.wholphin.util.profile.Codec
 import com.github.damontecres.wholphin.util.profile.subtitleProfile
@@ -8,9 +8,9 @@ import org.jellyfin.sdk.model.api.EncodingContext
 import org.jellyfin.sdk.model.api.MediaStreamProtocol
 import org.jellyfin.sdk.model.deviceprofile.buildDeviceProfile
 
-val mpvDeviceProfile =
+val vlcDeviceProfile =
     buildDeviceProfile {
-        name = "mpv"
+        name = "vlc"
 
         // TODO
 //    maxStaticBitrate = maxBitrate

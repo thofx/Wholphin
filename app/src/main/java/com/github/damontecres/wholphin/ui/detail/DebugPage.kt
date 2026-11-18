@@ -110,12 +110,11 @@ class DebugViewModel
             }
         }
 
-        val libMpvLoaded by lazy {
+        val libVlcLoaded by lazy {
             try {
-                System.loadLibrary("player")
-                System.loadLibrary("mpv")
+                System.loadLibrary("vlc")
                 true
-            } catch (_: Exception) {
+            } catch (_: UnsatisfiedLinkError) {
                 false
             }
         }
@@ -153,7 +152,7 @@ class DebugViewModel
                         "Build time: $buildTime",
                         "FFMPEG included: $ffmpegIncluded",
                         "AV1 included: $av1Included",
-                        "libmpv loaded: $libMpvLoaded",
+                        "libvlc loaded: $libVlcLoaded",
                         "Debug enabled: ${BuildConfig.DEBUG}",
                         "ABIs: ${Build.SUPPORTED_ABIS.toList()}",
                     ) + installInfo

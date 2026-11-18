@@ -135,9 +135,10 @@ class TestTracks(
         }
 
         /**
-         * Create the [TestTracks] as if being playing by MPV
+         * Create the [TestTracks] as reported by VlcPlayer: "<position>:<id>", external subtitles last.
+         * Track selection only relies on that ordering, not on the id after the position.
          */
-        fun buildForMpv(): TestTracks {
+        fun buildForVlc(): TestTracks {
             val embeddedCount = tracks.count { !it.external }
             val embeddedSubtitleCount =
                 tracks.count { it.type == MediaStreamType.SUBTITLE && !it.external }
@@ -157,7 +158,7 @@ class TestTracks(
                     }
                     val id =
                         if (track.external) {
-                            // MPV places external subtitles last
+                            // VlcPlayer reports external subtitles after the embedded tracks
                             val idx = index + if (externalSubtitleAreFirst) embeddedCount else 0
                             subtitleCount++
                             val count =
@@ -330,7 +331,7 @@ object TrackExamples {
 
 class TestTracksTests {
     @Test
-    fun testMpv() {
+    fun testVlc() {
         val testTracks =
             TestTracks
                 .Builder()
@@ -338,7 +339,7 @@ class TestTracksTests {
                 .addVideo()
                 .addAudio(4)
                 .addSubtitle(4)
-                .buildForMpv()
+                .buildForVlc()
                 .tracks
         Assert.assertEquals(10, testTracks.size)
         Assert.assertEquals("9:e:5", testTracks[0].id)
@@ -411,14 +412,14 @@ class TestTracksTests {
             Assert.assertEquals("6", exo[5].id)
         }
 
-        TrackExamples.builderVAASSS.buildForMpv().tracks.let { mpv ->
-            Assert.assertEquals(6, mpv.size)
-            Assert.assertEquals("0:1", mpv[0].id)
-            Assert.assertEquals("1:1", mpv[1].id)
-            Assert.assertEquals("2:2", mpv[2].id)
-            Assert.assertEquals("3:1", mpv[3].id)
-            Assert.assertEquals("4:2", mpv[4].id)
-            Assert.assertEquals("5:3", mpv[5].id)
+        TrackExamples.builderVAASSS.buildForVlc().tracks.let { vlc ->
+            Assert.assertEquals(6, vlc.size)
+            Assert.assertEquals("0:1", vlc[0].id)
+            Assert.assertEquals("1:1", vlc[1].id)
+            Assert.assertEquals("2:2", vlc[2].id)
+            Assert.assertEquals("3:1", vlc[3].id)
+            Assert.assertEquals("4:2", vlc[4].id)
+            Assert.assertEquals("5:3", vlc[5].id)
         }
     }
 
@@ -436,16 +437,16 @@ class TestTracksTests {
             assertIdType("0:6", MediaStreamType.SUBTITLE, exo[6])
         }
 
-        TrackExamples.builderEVAASSS.buildForMpv().tracks.let { mpv ->
-            Assert.assertEquals(7, mpv.size)
-            Assert.assertTrue(mpv[0].external)
-            Assert.assertEquals("6:e:4", mpv[0].id)
-            Assert.assertEquals("0:1", mpv[1].id)
-            Assert.assertEquals("1:1", mpv[2].id)
-            Assert.assertEquals("2:2", mpv[3].id)
-            Assert.assertEquals("3:1", mpv[4].id)
-            Assert.assertEquals("4:2", mpv[5].id)
-            Assert.assertEquals("5:3", mpv[6].id)
+        TrackExamples.builderEVAASSS.buildForVlc().tracks.let { vlc ->
+            Assert.assertEquals(7, vlc.size)
+            Assert.assertTrue(vlc[0].external)
+            Assert.assertEquals("6:e:4", vlc[0].id)
+            Assert.assertEquals("0:1", vlc[1].id)
+            Assert.assertEquals("1:1", vlc[2].id)
+            Assert.assertEquals("2:2", vlc[3].id)
+            Assert.assertEquals("3:1", vlc[4].id)
+            Assert.assertEquals("4:2", vlc[5].id)
+            Assert.assertEquals("5:3", vlc[6].id)
         }
     }
 
@@ -461,14 +462,14 @@ class TestTracksTests {
             assertIdType("6", MediaStreamType.VIDEO, exo[5])
         }
 
-        TrackExamples.builderAASSSV.buildForMpv().tracks.let { mpv ->
-            Assert.assertEquals(6, mpv.size)
-            assertIdType("0:1", MediaStreamType.AUDIO, mpv[0])
-            assertIdType("1:2", MediaStreamType.AUDIO, mpv[1])
-            assertIdType("2:1", MediaStreamType.SUBTITLE, mpv[2])
-            assertIdType("3:2", MediaStreamType.SUBTITLE, mpv[3])
-            assertIdType("4:3", MediaStreamType.SUBTITLE, mpv[4])
-            assertIdType("5:1", MediaStreamType.VIDEO, mpv[5])
+        TrackExamples.builderAASSSV.buildForVlc().tracks.let { vlc ->
+            Assert.assertEquals(6, vlc.size)
+            assertIdType("0:1", MediaStreamType.AUDIO, vlc[0])
+            assertIdType("1:2", MediaStreamType.AUDIO, vlc[1])
+            assertIdType("2:1", MediaStreamType.SUBTITLE, vlc[2])
+            assertIdType("3:2", MediaStreamType.SUBTITLE, vlc[3])
+            assertIdType("4:3", MediaStreamType.SUBTITLE, vlc[4])
+            assertIdType("5:1", MediaStreamType.VIDEO, vlc[5])
         }
     }
 
@@ -484,14 +485,14 @@ class TestTracksTests {
             assertIdType("6", MediaStreamType.SUBTITLE, exo[5])
         }
 
-        TrackExamples.builderAAVSSS.buildForMpv().tracks.let { mpv ->
-            Assert.assertEquals(6, mpv.size)
-            assertIdType("0:1", MediaStreamType.AUDIO, mpv[0])
-            assertIdType("1:2", MediaStreamType.AUDIO, mpv[1])
-            assertIdType("2:1", MediaStreamType.VIDEO, mpv[2])
-            assertIdType("3:1", MediaStreamType.SUBTITLE, mpv[3])
-            assertIdType("4:2", MediaStreamType.SUBTITLE, mpv[4])
-            assertIdType("5:3", MediaStreamType.SUBTITLE, mpv[5])
+        TrackExamples.builderAAVSSS.buildForVlc().tracks.let { vlc ->
+            Assert.assertEquals(6, vlc.size)
+            assertIdType("0:1", MediaStreamType.AUDIO, vlc[0])
+            assertIdType("1:2", MediaStreamType.AUDIO, vlc[1])
+            assertIdType("2:1", MediaStreamType.VIDEO, vlc[2])
+            assertIdType("3:1", MediaStreamType.SUBTITLE, vlc[3])
+            assertIdType("4:2", MediaStreamType.SUBTITLE, vlc[4])
+            assertIdType("5:3", MediaStreamType.SUBTITLE, vlc[5])
         }
     }
 
@@ -507,14 +508,14 @@ class TestTracksTests {
             assertIdType("6", MediaStreamType.SUBTITLE, exo[5])
         }
 
-        TrackExamples.builderVASASS.buildForMpv().tracks.let { mpv ->
-            Assert.assertEquals(6, mpv.size)
-            assertIdType("0:1", MediaStreamType.VIDEO, mpv[0])
-            assertIdType("1:1", MediaStreamType.AUDIO, mpv[1])
-            assertIdType("2:1", MediaStreamType.SUBTITLE, mpv[2])
-            assertIdType("3:2", MediaStreamType.AUDIO, mpv[3])
-            assertIdType("4:2", MediaStreamType.SUBTITLE, mpv[4])
-            assertIdType("5:3", MediaStreamType.SUBTITLE, mpv[5])
+        TrackExamples.builderVASASS.buildForVlc().tracks.let { vlc ->
+            Assert.assertEquals(6, vlc.size)
+            assertIdType("0:1", MediaStreamType.VIDEO, vlc[0])
+            assertIdType("1:1", MediaStreamType.AUDIO, vlc[1])
+            assertIdType("2:1", MediaStreamType.SUBTITLE, vlc[2])
+            assertIdType("3:2", MediaStreamType.AUDIO, vlc[3])
+            assertIdType("4:2", MediaStreamType.SUBTITLE, vlc[4])
+            assertIdType("5:3", MediaStreamType.SUBTITLE, vlc[5])
         }
     }
 
@@ -541,7 +542,7 @@ class TestTracksTests {
             Assert.assertEquals("1:e:8", tracks[8].id)
         }
 
-        builder.buildForMpv().tracks.let { tracks ->
+        builder.buildForVlc().tracks.let { tracks ->
             Assert.assertEquals(9, tracks.size)
             Assert.assertEquals("0:1", tracks[0].id)
             Assert.assertEquals("1:1", tracks[1].id)
@@ -582,15 +583,15 @@ class TestTracksTests {
             assertIdType("6", MediaStreamType.SUBTITLE, exo[5])
         }
 
-        builder.buildForMpv().tracks.let { mpv ->
-            Assert.assertEquals(46, mpv.size)
-            assertIdType("0:1", MediaStreamType.AUDIO, mpv[0])
-            assertIdType("1:2", MediaStreamType.AUDIO, mpv[1])
-            assertIdType("2:1", MediaStreamType.VIDEO, mpv[2])
-            assertIdType("3:3", MediaStreamType.AUDIO, mpv[3])
-            assertIdType("4:1", MediaStreamType.SUBTITLE, mpv[4])
-            assertIdType("5:2", MediaStreamType.SUBTITLE, mpv[5])
-            assertIdType("6:3", MediaStreamType.SUBTITLE, mpv[6])
+        builder.buildForVlc().tracks.let { vlc ->
+            Assert.assertEquals(46, vlc.size)
+            assertIdType("0:1", MediaStreamType.AUDIO, vlc[0])
+            assertIdType("1:2", MediaStreamType.AUDIO, vlc[1])
+            assertIdType("2:1", MediaStreamType.VIDEO, vlc[2])
+            assertIdType("3:3", MediaStreamType.AUDIO, vlc[3])
+            assertIdType("4:1", MediaStreamType.SUBTITLE, vlc[4])
+            assertIdType("5:2", MediaStreamType.SUBTITLE, vlc[5])
+            assertIdType("6:3", MediaStreamType.SUBTITLE, vlc[6])
         }
     }
 }

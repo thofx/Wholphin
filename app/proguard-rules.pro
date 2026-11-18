@@ -1,6 +1,7 @@
 -keepattributes SourceFile,LineNumberTable
 
--keep class com.github.damontecres.wholphin.mpv.MPVLib { *; }
+# libVLC calls back into its Java classes by name from native code
+-keep class org.videolan.libvlc.** { *; }
 
 -keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
 -keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite {

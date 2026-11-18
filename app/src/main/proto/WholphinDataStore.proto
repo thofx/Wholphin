@@ -32,14 +32,10 @@ enum MediaExtensionStatus{
 
 enum PlayerBackend{
   EXO_PLAYER = 0;
-  MPV = 1;
-  PREFER_MPV = 2;
+  // Numbers kept from the former MPV / PREFER_MPV values so saved settings carry over
+  VLC = 1;
+  EXO_THEN_VLC = 2;
   EXTERNAL_PLAYER = 3;
-}
-
-message MpvOptions{
-  bool enable_hardware_decoding = 1;
-  bool use_gpu_next = 2;
 }
 
 enum AssPlaybackMode{
@@ -88,7 +84,7 @@ message PlaybackPreferences {
   ShowNextUpWhen show_next_up_when = 18;
   bool one_click_pause = 19;
   PlayerBackend player_backend = 20;
-  MpvOptions mpv_options = 21;
+  reserved 21; // mpv_options
   bool refresh_rate_switching = 22;
   bool resolution_switching = 23;
   string external_player = 24;

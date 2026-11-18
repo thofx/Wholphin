@@ -26,7 +26,6 @@ import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.ExtractorsFactory
 import androidx.media3.session.MediaSession
-import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
@@ -40,6 +39,7 @@ import com.github.damontecres.wholphin.util.DolbyVisionProfile7ExtractorsFactory
 import com.github.damontecres.wholphin.util.DolbyVisionProfile7Filter
 import com.github.damontecres.wholphin.util.Hdr10PlusMaskingFilter
 import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.vlc.VlcPlayer
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -84,15 +84,10 @@ class PlayerFactory
             var assHandler: AssHandler? = null
             val newPlayer =
                 when (backend) {
-                    PlayerBackend.PREFER_MPV,
-                    PlayerBackend.MPV,
-                    -> {
-                        val enableHardwareDecoding = prefs.mpvOptions.enableHardwareDecoding
-                        val useGpuNext = prefs.mpvOptions.useGpuNext
-                        MpvPlayer(context, enableHardwareDecoding, useGpuNext)
-                    }
+                    PlayerBackend.VLC -> VlcPlayer(context)
 
                     PlayerBackend.EXO_PLAYER,
+                    PlayerBackend.EXO_THEN_VLC,
                     PlayerBackend.UNRECOGNIZED,
                     -> {
                         val extensions = prefs.overrides.mediaExtensionsEnabled
@@ -298,7 +293,7 @@ val Player.isReleased: Boolean
     get() {
         return when (this) {
             is ExoPlayer -> isReleased
-            is MpvPlayer -> isReleased
+            is VlcPlayer -> isReleased
             else -> throw IllegalStateException("Unknown Player type: ${this::class.qualifiedName}")
         }
     }

@@ -18,7 +18,6 @@ import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
@@ -38,7 +37,6 @@ import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
-import java.io.File
 
 @Suppress("UNCHECKED_CAST")
 @Composable
@@ -68,37 +66,6 @@ fun <T> ComposablePreference(
     }
 
     when (preference) {
-        AppPreference.MpvConfFile -> {
-            ClickPreference(
-                title = title,
-                onClick = {
-                    val confFile = File(context.filesDir, "mpv.conf")
-                    val contents = if (confFile.exists()) confFile.readText() else ""
-                    showStringDialog =
-                        StringInput(
-                            title = title,
-                            value = contents,
-                            keyboardOptions =
-                                KeyboardOptions(
-                                    capitalization = KeyboardCapitalization.None,
-                                    autoCorrectEnabled = false,
-                                    keyboardType = KeyboardType.Text,
-                                    imeAction = ImeAction.None,
-                                ),
-                            onSubmit = {
-                                confFile.writeText(it)
-                                showStringDialog = null
-                            },
-                            maxLines = 10,
-                            confirmDiscard = true,
-                        )
-                },
-                summary = preference.summary(context, value),
-                interactionSource = interactionSource,
-                modifier = modifier,
-            )
-        }
-
         is AppDestinationPreference -> {
             ClickPreference(
                 title = title,

@@ -70,15 +70,6 @@ class AppPreferencesSerializer
                                             assPlaybackMode =
                                                 AppPreference.AssSubtitleMode.defaultValue
                                         }.build()
-
-                                mpvOptions =
-                                    MpvOptions
-                                        .newBuilder()
-                                        .apply {
-                                            enableHardwareDecoding =
-                                                AppPreference.MpvHardwareDecoding.defaultValue
-                                            useGpuNext = AppPreference.MpvGpuNext.defaultValue
-                                        }.build()
                             }.build()
                     homePagePreferences =
                         HomePagePreferences
@@ -215,11 +206,6 @@ inline fun AppPreferences.updatePlaybackPreferences(block: PlaybackPreferences.B
 inline fun AppPreferences.updatePlaybackOverrides(block: PlaybackOverrides.Builder.() -> Unit): AppPreferences =
     updatePlaybackPreferences {
         overrides = overrides.toBuilder().apply(block).build()
-    }
-
-inline fun AppPreferences.updateMpvOptions(block: MpvOptions.Builder.() -> Unit): AppPreferences =
-    updatePlaybackPreferences {
-        mpvOptions = mpvOptions.toBuilder().apply(block).build()
     }
 
 inline fun AppPreferences.updateHomePagePreferences(block: HomePagePreferences.Builder.() -> Unit): AppPreferences =

@@ -87,7 +87,6 @@ class TestMainActivityViewModel {
     fun setUp() {
         WholphinDispatchers.configure(testDispatcher)
         every { appUpgradeHandler.needUpgrade() } returns false
-        every { appUpgradeHandler.copySubfont(any()) } returns Unit
         mockkStatic(Toast::class)
         val mockToast = mockk<Toast>()
         every { Toast.makeText(any(), any<CharSequence>(), any()) } returns mockToast

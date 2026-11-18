@@ -289,9 +289,6 @@
     <string name="reset">Repor</string>
     <string name="bold_font">Fonte em negrito</string>
     <string name="player_backend">Motor de reprodução</string>
-    <string name="mpv_hardware_decoding">MPV: Usar descodificação por hardware</string>
-    <string name="disable_if_crash">Desative se ocorrerem falhas</string>
-    <string name="mpv_options">Opções do MPV</string>
     <string name="exoplayer_options">Opções do ExoPlayer</string>
     <string name="skip_segment_unknown">Saltar Segmento</string>
     <string name="skip_segment_commercial">Saltar Publicidade</string>
@@ -306,8 +303,6 @@
     <string name="remove">Remover</string>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
-    <string name="mpv_use_gpu_next">MPV: Usar gpu-next</string>
-    <string name="mpv_conf">Editar mpv.conf</string>
     <string name="discard_change">Anular alterações?</string>
     <string name="subtitle_margin">Margem</string>
     <string name="verbose_logging">Registro detalhado</string>
@@ -425,7 +420,6 @@
     <string name="voice_error_timeout">Tempo limite do reconhecimento de voz expirado</string>
     <string name="retry">Tentar novamente</string>
     <string name="software_decoding_av1">Decodificação de AV1 por software</string>
-    <string name="upgrade_mpv_toast">O MPV é agora o reprodutor padrão, exceto para HDR.\nPode alterar esta configuração nas definições.</string>
     <plurals name="days">
         <item quantity="one">%s Dia</item>
         <item quantity="many">%s Dias</item>
@@ -538,8 +532,6 @@
     <string name="subtitle_edge_shadow">Sombra</string>
     <string name="background_style_wrap">Envolver</string>
     <string name="background_style_boxed">Com caixa</string>
-    <string name="prefer_mpv">Preferir MPV</string>
-    <string name="player_backend_options_subtitles_prefer_mpv">Usar ExoPlayer para reprodução HDR</string>
     <string name="aspect_ratios_poster">Poster (2:3)</string>
     <string name="aspect_ratios_16_9">16:9</string>
     <string name="aspect_ratios_4_3">4:3</string>

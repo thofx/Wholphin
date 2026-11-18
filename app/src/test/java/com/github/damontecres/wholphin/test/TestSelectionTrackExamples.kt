@@ -21,7 +21,7 @@ class TestSelectionTrackExamples {
         val testTacks =
             when (playerBackend) {
                 PlayerBackend.EXO_PLAYER -> builder.buildForExoPlayer()
-                PlayerBackend.MPV -> builder.buildForMpv()
+                PlayerBackend.VLC -> builder.buildForVlc()
                 else -> throw IllegalArgumentException("Unsupported backend: $playerBackend")
             }
 
@@ -54,8 +54,8 @@ class TestSelectionTrackExamples {
     }
 
     @Test
-    fun `test VAS MPV`() {
-        runTest(TrackExamples.builderVAASSS, PlayerBackend.MPV, audioIndex = 1, subtitleIndex = 4) { result ->
+    fun `test VAS VLC`() {
+        runTest(TrackExamples.builderVAASSS, PlayerBackend.VLC, audioIndex = 1, subtitleIndex = 4) { result ->
             Assert.assertTrue(result.bothSelected)
             Assert.assertEquals("1:1", result.trackSelectionParameters.getAudioOverride()?.id)
             Assert.assertEquals("4:2", result.trackSelectionParameters.getSubtitleOverride()?.id)
@@ -88,10 +88,10 @@ class TestSelectionTrackExamples {
     }
 
     @Test
-    fun `test EVAS MPV`() {
+    fun `test EVAS VLC`() {
         runTest(
             TrackExamples.builderEVAASSS,
-            PlayerBackend.MPV,
+            PlayerBackend.VLC,
             audioIndex = 2,
             subtitleIndex = 4,
         ) { result ->
@@ -102,7 +102,7 @@ class TestSelectionTrackExamples {
 
         runTest(
             TrackExamples.builderEVAASSS,
-            PlayerBackend.MPV,
+            PlayerBackend.VLC,
             audioIndex = 2,
             subtitleIndex = 0, // external
         ) { result ->
@@ -127,7 +127,7 @@ class TestSelectionTrackExamples {
 
         runTest(
             TrackExamples.builderVASASS,
-            PlayerBackend.MPV,
+            PlayerBackend.VLC,
             audioIndex = 1,
             subtitleIndex = 2,
         ) { result ->
@@ -149,7 +149,7 @@ class TestSelectionTrackExamples {
 
         runTest(
             TrackExamples.builderVASASS,
-            PlayerBackend.MPV,
+            PlayerBackend.VLC,
             audioIndex = 3,
             subtitleIndex = 5,
         ) { result ->
@@ -193,7 +193,7 @@ class TestSelectionTrackExamples {
                 .addSubtitle(42)
         runTest(
             builder,
-            PlayerBackend.MPV,
+            PlayerBackend.VLC,
             audioIndex = 1,
             subtitleIndex = 5,
         ) { result ->

@@ -31,8 +31,6 @@ val ffmpegModuleExists =
     providers.provider { project.file("libs/lib-decoder-ffmpeg-release.aar").exists() }
 val av1ModuleExists =
     providers.provider { project.file("libs/lib-decoder-av1-release.aar").exists() }
-val mpvModuleExists =
-    providers.provider { project.file("libs/wholphin-mpv-release.aar").exists() }
 val extensionsRepoActive =
     providers.provider { project.hasProperty("WholphinExtensionsUsername") }
 
@@ -186,7 +184,7 @@ configure<ApplicationExtension> {
     }
     packaging {
         jniLibs {
-            // Work around because libass-android & wholphin-mpv both (incorrectly) package libc++_shared.so
+            // Work around because libass-android & libvlc both package libc++_shared.so
             pickFirsts += "lib/*/libc++_shared.so"
         }
     }
@@ -386,16 +384,7 @@ dependencies {
     } else {
         logger.warn("Media3 av1 decoder was NOT found")
     }
-    if (mpvModuleExists.get()) {
-        logger.info("Using local libMPV build")
-        implementation(files("libs/wholphin-mpv-release.aar"))
-    } else if (extensionsRepoActive.get()) {
-        logger.info("Using prebuilt libMPV")
-        implementation(libs.wholphin.extensions.mpv)
-    } else {
-        logger.warn("libMPV was NOT found, using stub library")
-        implementation(project(":wholphin-mpv-stub"))
-    }
+    implementation(libs.libvlc.all)
 
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)

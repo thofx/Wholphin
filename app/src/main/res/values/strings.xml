@@ -378,9 +378,6 @@
     <string name="bold_font">Bold font</string>
 
     <string name="player_backend">Playback Backend</string>
-    <string name="mpv_hardware_decoding">MPV: Use hardware decoding</string>
-    <string name="disable_if_crash">Disable if you experience crashes</string>
-    <string name="mpv_options">MPV Options</string>
     <string name="exoplayer_options">ExoPlayer Options</string>
     <string name="skip_segment_unknown">Skip Segment</string>
     <string name="skip_segment_commercial">Skip Ads</string>
@@ -395,8 +392,6 @@
     <string name="remove">Remove</string>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
-    <string name="mpv_use_gpu_next">MPV: Use gpu-next</string>
-    <string name="mpv_conf">Edit mpv.conf</string>
     <string name="discard_change">Discard changes?</string>
     <string name="subtitle_margin">Margin</string>
     <string name="verbose_logging">Verbose logging</string>
@@ -525,7 +520,6 @@
     <string name="upcoming_tv">Upcoming TV Shows</string>
     <string name="request_4k">Request in 4K</string>
     <string name="software_decoding_av1">AV1 software decoding</string>
-    <string name="upgrade_mpv_toast">MPV is now the default player except for HDR.\nYou can change this in settings.</string>
     <string name="hdr_subtitle_style">HDR subtitle style</string>
     <string name="image_subtitle_opacity">Image subtitle opacity</string>
 
@@ -710,21 +704,20 @@
     </string-array>
 
     <string name="exoplayer" translatable="false">ExoPlayer</string>
-    <string name="mpv" translatable="false">MPV</string>
-    <string name="prefer_mpv">Prefer MPV</string>
+    <string name="vlc" translatable="false">VLC</string>
+    <string name="exo_then_vlc">ExoPlayer, then VLC</string>
     <string name="external_player">External Player</string>
     <string-array name="player_backend_options">
         <item>@string/exoplayer</item>
-        <item>@string/mpv</item>
-        <item>@string/prefer_mpv</item>
+        <item>@string/vlc</item>
+        <item>@string/exo_then_vlc</item>
         <item>@string/external_player</item>
     </string-array>
-
-    <string name="player_backend_options_subtitles_prefer_mpv">Use ExoPlayer for HDR playback</string>
+    <string name="player_backend_options_subtitles_exo_then_vlc">Switches to VLC when ExoPlayer cannot play a file</string>
     <string-array name="player_backend_options_subtitles">
         <item /><!-- Intentionally blank -->
         <item /><!-- Intentionally blank -->
-        <item>@string/player_backend_options_subtitles_prefer_mpv</item>
+        <item>@string/player_backend_options_subtitles_exo_then_vlc</item>
         <item /><!-- Intentionally blank -->
     </string-array>
 

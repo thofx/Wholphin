@@ -3,6 +3,7 @@ package com.github.damontecres.wholphin.ui.components
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
@@ -17,6 +18,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import kotlinx.coroutines.delay
 import kotlin.time.Duration
@@ -42,6 +44,7 @@ fun CircularProgress(modifier: Modifier = Modifier) {
 fun LoadingPage(
     modifier: Modifier = Modifier,
     focusEnabled: Boolean = true,
+    label: String? = null,
 ) {
     val focusRequester = remember { FocusRequester() }
     if (focusEnabled) {
@@ -62,6 +65,14 @@ fun LoadingPage(
                     .align(Alignment.Center)
                     .size(48.dp),
         )
+        label?.let {
+            // Below the spinner, which stays centered
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.align(Alignment.Center).offset(y = 48.dp),
+            )
+        }
     }
 }
 

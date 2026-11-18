@@ -20,6 +20,7 @@ import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.ExperimentalPreference
 import com.github.damontecres.wholphin.preferences.HdrOverrideMode
+import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.update
 import com.github.damontecres.wholphin.preferences.updateAdvancedPreferences
@@ -27,7 +28,6 @@ import com.github.damontecres.wholphin.preferences.updateExperimentalPreferences
 import com.github.damontecres.wholphin.preferences.updateHomePagePreferences
 import com.github.damontecres.wholphin.preferences.updateInterfacePreferences
 import com.github.damontecres.wholphin.preferences.updateLiveTvPreferences
-import com.github.damontecres.wholphin.preferences.updateMpvOptions
 import com.github.damontecres.wholphin.preferences.updateMusicPreferences
 import com.github.damontecres.wholphin.preferences.updatePhotoPreferences
 import com.github.damontecres.wholphin.preferences.updatePlaybackOverrides
@@ -109,7 +109,6 @@ class AppUpgradeHandler
                 putLong(VERSION_CODE_CURRENT_KEY, newVersionCode)
             }
             try {
-                copySubfont(true)
                 upgradeApp(
                     Version.fromString(previousVersion ?: "0.0.0"),
                     Version.fromString(newVersion),
@@ -119,30 +118,6 @@ class AppUpgradeHandler
                 Timber.e(ex, "Exception during app upgrade")
             }
             Timber.i("App upgrade complete")
-        }
-
-        /**
-         * Copies the font file used by MPV subtitles to the app's files directory
-         */
-        fun copySubfont(overwrite: Boolean) {
-            try {
-                val fontFileName = "subfont.ttf"
-                val outputFile = File(context.filesDir, fontFileName)
-                if (!outputFile.exists() || overwrite) {
-                    context.assets.open(fontFileName).use { input ->
-                        outputFile.outputStream().use { output ->
-                            input.copyTo(output)
-                        }
-                    }
-                    Timber.i("Wrote font %s to local", fontFileName)
-                }
-//                val oldFontDir = File(context.filesDir, "fonts")
-//                if (oldFontDir.exists()) {
-//                    oldFontDir.deleteRecursively()
-//                }
-            } catch (ex: Exception) {
-                Timber.e(ex, "Exception copying subfont.tff")
-            }
         }
 
         companion object {
@@ -206,14 +181,6 @@ class AppUpgradeHandler
                 }
             }
 
-            if (previous.isEqualOrBefore(Version.fromString("0.3.4-2-g0"))) {
-                appPreferences.updateData {
-                    it.updateMpvOptions {
-                        useGpuNext = AppPreference.MpvGpuNext.defaultValue
-                    }
-                }
-            }
-
             if (previous.isEqualOrBefore(Version.fromString("0.3.4-4-g0"))) {
                 appPreferences.updateData {
                     it.update {
@@ -241,32 +208,6 @@ class AppUpgradeHandler
                             AppPreference.LiveTvChannelSortByWatched.defaultValue
                         colorCodePrograms =
                             AppPreference.LiveTvColorCodePrograms.defaultValue
-                    }
-                }
-            }
-
-            if (previous.isEqualOrBefore(Version.fromString("0.3.6-52-g0"))) {
-                if (Build.MODEL.equals("shield android tv", ignoreCase = true)) {
-                    appPreferences.updateData {
-                        it.updateMpvOptions {
-                            useGpuNext = false
-                        }
-                    }
-                }
-            }
-
-            // TODO temporarily disabled until some MPV bugs are fixed
-//    if (previous.isEqualOrBefore(Version.fromString("0.4.0-1-g0"))) {
-//        appPreferences.updateData {
-//            it.updatePlaybackPreferences { playerBackend = PlayerBackend.PREFER_MPV }
-//        }
-//        showToast(context, context.getString(R.string.upgrade_mpv_toast), Toast.LENGTH_LONG)
-//    }
-
-            if (previous.isEqualOrBefore(Version.fromString("0.4.0-2-g0"))) {
-                appPreferences.updateData {
-                    it.updateMpvOptions {
-                        useGpuNext = false
                     }
                 }
             }
@@ -489,6 +430,19 @@ class AppUpgradeHandler
                         it
                     }
                 }
+            }
+
+            if (previous.isLessThan(Version.fromString("1.1.1-18-g0"))) {
+                // VLC replaced MPV: plain ExoPlayer now hands media it cannot play over to VLC
+                appPreferences.updateData {
+                    if (it.playbackPreferences.playerBackend == PlayerBackend.EXO_PLAYER) {
+                        it.updatePlaybackPreferences { playerBackend = PlayerBackend.EXO_THEN_VLC }
+                    } else {
+                        it
+                    }
+                }
+                // MPV's subtitle font and config file are no longer used
+                listOf("subfont.ttf", "mpv.conf").forEach { File(context.filesDir, it).delete() }
             }
 
             if (previous.isLessThan(Version.fromString("1.0.10-0-g0"))) {

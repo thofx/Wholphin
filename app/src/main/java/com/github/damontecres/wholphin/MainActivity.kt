@@ -549,7 +549,6 @@ class MainActivityViewModel
                 )
                 appUpgradeHandler.run()
             }
-            appUpgradeHandler.copySubfont(false)
         }
 
         /**

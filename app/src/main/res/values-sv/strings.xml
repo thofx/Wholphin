@@ -243,8 +243,6 @@
     <string name="downmix_stereo">Mixa alltid om till stereo</string>
     <string name="ffmpeg_extension_pref">Använd FFmpeg dekodermodul</string>
     <string name="global_content_scale">Standard skalning</string>
-    <string name="disable_if_crash">Inaktivera om du upplever krascher</string>
-    <string name="mpv_options">MPV inställningar</string>
     <string name="exoplayer_options">ExoPlayer inställningar</string>
     <string name="download_and_update">Ladda ner och uppdatera</string>
     <string name="skip_segment_intro">Hoppa över intro</string>
@@ -401,7 +399,6 @@
     <string name="upcoming_movies">Kommande filmer</string>
     <string name="upcoming_tv">Kommande TV-serier</string>
     <string name="update_url_summary">Webbadress som används för att kontrollera appuppdateringar</string>
-    <string name="upgrade_mpv_toast">MPV är nu standardspelaren förutom för HDR. Du kan ändra detta i inställningarna.</string>
     <string name="use_series">Använd seriebild</string>
     <string name="use_thumb_images">Använd miniatyrbilder</string>
     <string name="home_rows">Rader på startsidan</string>
@@ -448,9 +445,7 @@
     <string name="subtitle_edge_outline">Kontur</string>
     <string name="background_style_wrap">Radbryt</string>
     <string name="background_style_boxed">Inramad</string>
-    <string name="prefer_mpv">Föredra MPV</string>
     <string name="external_player">Extern spelare</string>
-    <string name="player_backend_options_subtitles_prefer_mpv">Använd ExoPlayer för HDR-uppspelning</string>
     <string name="aspect_ratios_poster">Affisch (2:3)</string>
     <string name="aspect_ratios_16_9">16:9</string>
     <string name="aspect_ratios_4_3">4:3</string>
@@ -614,10 +609,8 @@
     <string name="duration_minutes">%1$dm</string>
     <string name="duration_seconds">%1$ds</string>
     <string name="time_left">%1$s kvar</string>
-    <string name="mpv_hardware_decoding">MPV: Använd hårdvaruavkodning</string>
     <string name="interlaced">Sammanflätad</string>
     <string name="level">Nivå</string>
-    <string name="mpv_conf">Redigera mpv.conf</string>
     <string name="profile_specific_settings_from_server">Profilinställningar från server</string>
     <string name="no_max">Ingen övre gräns</string>
     <string name="include_types">Inkludera typer</string>

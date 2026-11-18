@@ -286,9 +286,6 @@
     <string name="reset">Restablecer</string>
     <string name="bold_font">Negrita</string>
     <string name="player_backend">Motor de reproducción</string>
-    <string name="mpv_hardware_decoding">MPV: Usar decodificación por hardware</string>
-    <string name="disable_if_crash">Desactívalo si experimentas fallos</string>
-    <string name="mpv_options">Opciones de MPV</string>
     <string name="exoplayer_options">Opciones de ExoPlayer</string>
     <string name="skip_segment_unknown">Saltar segmento</string>
     <string name="skip_segment_commercial">Saltar anuncios</string>
@@ -310,8 +307,6 @@
     <string name="enter_server_address">Introduzca la dirección del servidor</string>
     <string name="no_servers_found">No se encontraron servidores</string>
     <string name="media_information">Información multimedia</string>
-    <string name="mpv_use_gpu_next">MPV: Usar gpu-next</string>
-    <string name="mpv_conf">Editar mpv.conf</string>
     <string name="discard_change">¿Descartar los cambios?</string>
     <string name="subtitle_margin">Margen</string>
     <string name="verbose_logging">Registro detallado</string>
@@ -425,7 +420,6 @@
     <string name="upcoming_tv">Próximos programas de televisión</string>
     <string name="request_4k">Solicitar en 4K</string>
     <string name="software_decoding_av1">Decodificación por software AV1</string>
-    <string name="upgrade_mpv_toast">MPV es ahora el reproductor por defecto para HDR.\nPuedes cambiar esto en los ajustes.</string>
     <plurals name="days">
         <item quantity="one">%s día</item>
         <item quantity="many">%s días</item>
@@ -520,8 +514,6 @@
     <string name="subtitle_edge_shadow">Sombra</string>
     <string name="background_style_wrap">Ajustado al texto</string>
     <string name="background_style_boxed">Enmarcado</string>
-    <string name="prefer_mpv">Preferir MPV</string>
-    <string name="player_backend_options_subtitles_prefer_mpv">Usar ExoPlayer para reproducir contenido HDR</string>
     <string name="aspect_ratios_poster">Póster (2:3)</string>
     <string name="aspect_ratios_16_9">16:9</string>
     <string name="aspect_ratios_4_3">4:3</string>

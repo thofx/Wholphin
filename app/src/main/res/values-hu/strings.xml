@@ -271,9 +271,6 @@
     <string name="background_color">Háttér színe</string>
     <string name="reset">Visszaállítás</string>
     <string name="bold_font">Félkövér betűk</string>
-    <string name="mpv_hardware_decoding">MPV: hardveres dekódolás használata</string>
-    <string name="disable_if_crash">Tiltsa le, ha összeomlást tapasztal</string>
-    <string name="mpv_options">MPV beállítások</string>
     <string name="exoplayer_options">ExoPlayer beállítások</string>
     <string name="skip_segment_unknown">Szegmens átugrása</string>
     <string name="skip_segment_commercial">Reklám átugrása</string>
@@ -288,8 +285,6 @@
     <string name="remove">Eltávolítás</string>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
-    <string name="mpv_use_gpu_next">MPV: gpu-next használata</string>
-    <string name="mpv_conf">mpv.conf szerkesztése</string>
     <string name="discard_change">Elveti a változtatásokat?</string>
     <string name="subtitle_margin">Függőleges eltolás</string>
     <string name="verbose_logging">Részletes naplózás</string>
@@ -467,7 +462,6 @@
     <string name="upcoming_tv">Hamarosan induló sorozatok</string>
     <string name="request_4k">Kérés 4K-ban</string>
     <string name="software_decoding_av1">AV1 szoftveres dekódolása</string>
-    <string name="upgrade_mpv_toast">Az MPV mostantól az alapértelmezett lejátszó, kivéve HDR-tartalmak esetén. \nEzt a beállításokban módosíthatod.</string>
     <string name="hdr_subtitle_style">HDR-feliratok stílusa</string>
     <string name="image_subtitle_opacity">Képalapú feliratok átlátszatlansága</string>
     <string name="brightness">Fényerő</string>
@@ -583,9 +577,7 @@
     <string name="subtitle_edge_outline">Körvonal</string>
     <string name="subtitle_edge_shadow">Árnyék</string>
     <string name="background_style_wrap">Sortörés</string>
-    <string name="prefer_mpv">Az MPV előnyben részesítése</string>
     <string name="external_player">Külső lejátszó</string>
-    <string name="player_backend_options_subtitles_prefer_mpv">Az ExoPlayer használata HDR-lejátszáshoz</string>
     <string name="aspect_ratios_poster">Poszter (2:3)</string>
     <string name="aspect_ratios_16_9">16:9</string>
     <string name="aspect_ratios_4_3">4:3</string>

@@ -54,8 +54,6 @@ import com.github.damontecres.wholphin.preferences.AppSwitchPreference
 import com.github.damontecres.wholphin.preferences.ExoPlayerPreferences
 import com.github.damontecres.wholphin.preferences.ExperimentalPreference
 import com.github.damontecres.wholphin.preferences.HdrFormatPreferences
-import com.github.damontecres.wholphin.preferences.MpvPreferences
-import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.ScreensaverPreference
 import com.github.damontecres.wholphin.preferences.SkipSegmentPreferences
 import com.github.damontecres.wholphin.preferences.advancedPreferences
@@ -63,7 +61,6 @@ import com.github.damontecres.wholphin.preferences.basicPreferences
 import com.github.damontecres.wholphin.preferences.experimentalPreferences
 import com.github.damontecres.wholphin.preferences.lazyListWrapScrolling
 import com.github.damontecres.wholphin.preferences.screensaverPreferences
-import com.github.damontecres.wholphin.preferences.updatePlaybackPreferences
 import com.github.damontecres.wholphin.services.Release
 import com.github.damontecres.wholphin.services.SeerrConnectionStatus
 import com.github.damontecres.wholphin.services.UpdateChecker
@@ -83,13 +80,11 @@ import com.github.damontecres.wholphin.ui.setup.UpdateViewModel
 import com.github.damontecres.wholphin.ui.setup.seerr.SeerrDialog
 import com.github.damontecres.wholphin.ui.setup.seerr.SeerrDialogMode
 import com.github.damontecres.wholphin.ui.setup.seerr.SwitchSeerrViewModel
-import com.github.damontecres.wholphin.ui.showToast
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import java.util.Locale
 
 @Composable
@@ -162,7 +157,6 @@ fun PreferencesContent(
             PreferenceScreenOption.BASIC -> basicPreferences
             PreferenceScreenOption.ADVANCED -> advancedPreferences
             PreferenceScreenOption.EXO_PLAYER -> ExoPlayerPreferences
-            PreferenceScreenOption.MPV -> MpvPreferences
             PreferenceScreenOption.SCREENSAVER -> screensaverPreferences
             PreferenceScreenOption.SKIP_SEGMENTS -> SkipSegmentPreferences
             PreferenceScreenOption.EXPERIMENTAL -> experimentalPreferences
@@ -173,7 +167,6 @@ fun PreferencesContent(
             PreferenceScreenOption.BASIC -> R.string.settings
             PreferenceScreenOption.ADVANCED -> R.string.advanced_settings
             PreferenceScreenOption.EXO_PLAYER -> R.string.exoplayer_options
-            PreferenceScreenOption.MPV -> R.string.mpv_options
             PreferenceScreenOption.SCREENSAVER -> R.string.screensaver_settings
             PreferenceScreenOption.SKIP_SEGMENTS -> R.string.skip_behavior
             PreferenceScreenOption.EXPERIMENTAL -> R.string.experimental_settings
@@ -184,22 +177,6 @@ fun PreferencesContent(
     LaunchedEffect(Unit) {
         // Forces the animated to trigger
         visible = true
-    }
-
-    LaunchedEffect(preferences.playbackPreferences.playerBackend) {
-        if (preferences.playbackPreferences.playerBackend == PlayerBackend.MPV) {
-            Timber.d("Checking for libmpv")
-            try {
-                System.loadLibrary("mpv")
-                System.loadLibrary("player")
-            } catch (ex: UnsatisfiedLinkError) {
-                Timber.w(ex, "Could not load libmpv")
-                showToast(context, "MPV is not supported on this device")
-                viewModel.preferenceDataStore.updateData {
-                    it.updatePlaybackPreferences { playerBackend = PlayerBackend.EXO_PLAYER }
-                }
-            }
-        }
     }
 
     val showUpdate =
@@ -808,7 +785,6 @@ fun PreferencesPage(
             PreferenceScreenOption.BASIC,
             PreferenceScreenOption.ADVANCED,
             PreferenceScreenOption.EXO_PLAYER,
-            PreferenceScreenOption.MPV,
             PreferenceScreenOption.SCREENSAVER,
             PreferenceScreenOption.SKIP_SEGMENTS,
             PreferenceScreenOption.EXPERIMENTAL,

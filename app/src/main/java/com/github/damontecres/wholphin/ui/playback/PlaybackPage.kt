@@ -1,6 +1,11 @@
 package com.github.damontecres.wholphin.ui.playback
 
+import android.graphics.PixelFormat
+import android.net.TrafficStats
+import android.os.Process
+import android.os.SystemClock
 import android.view.Gravity
+import android.view.SurfaceView
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
@@ -32,6 +37,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -69,7 +75,6 @@ import androidx.media3.ui.compose.state.rememberPlayPauseButtonState
 import androidx.media3.ui.compose.state.rememberPresentationState
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.surfaceColorAtElevation
-import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.DpadSeekMode
 import com.github.damontecres.wholphin.preferences.PlayerBackend
@@ -81,6 +86,7 @@ import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.components.LoadingPage
+import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.overlay.DpadSeekOverlay
 import com.github.damontecres.wholphin.ui.playback.overlay.PauseIndicator
@@ -101,6 +107,7 @@ import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.LoadingState
 import com.github.damontecres.wholphin.util.Media3SubtitleOverride
+import com.github.damontecres.wholphin.vlc.VlcPlayer
 import io.github.peerless2012.ass.media.widget.AssSubtitleView
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -171,27 +178,18 @@ fun PlaybackPageContent(
     val prefs = preferences.appPreferences.playbackPreferences
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
-    LaunchedEffect(density) { viewModel.updateDensity(density) }
     val userDto by viewModel.currentUserDto.collectAsState()
 
     var showDebugInfo by remember { mutableStateOf(prefs.showDebugInfo) }
 
     var playbackDialog by remember { mutableStateOf<PlaybackDialogType?>(null) }
 
-    var contentScale by remember(playerBackend) {
-        mutableStateOf(
-            if (playerBackend == PlayerBackend.MPV) {
-                ContentScale.FillBounds
-            } else {
-                prefs.globalContentScale.scale
-            },
-        )
-    }
+    var contentScale by remember { mutableStateOf(prefs.globalContentScale.scale) }
     var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
-    LaunchedEffect(playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
+    LaunchedEffect(player, playbackSpeed) { player.setPlaybackSpeed(playbackSpeed) }
 
-    LaunchedEffect(state.currentPlayback?.subtitleDelay) {
-        (player as? MpvPlayer)?.subtitleDelay =
+    LaunchedEffect(player, state.currentPlayback?.subtitleDelay) {
+        (player as? VlcPlayer)?.subtitleDelay =
             state.currentPlayback?.subtitleDelay ?: Duration.ZERO
     }
 
@@ -381,21 +379,39 @@ fun PlaybackPageContent(
                     .focusable(),
         ) {
             var playerSurfaceSize by remember { mutableStateOf(IntSize.Zero) }
-            PlayerSurface(
-                player = player,
-                surfaceType = SURFACE_TYPE_SURFACE_VIEW,
-                modifier =
-                    scaledModifier.onSizeChanged {
-                        playerSurfaceSize = it
+            // A fresh surface per backend: a released VlcPlayer lets go of its surface asynchronously,
+            // and ExoPlayer cannot connect a decoder to a surface libVLC still holds
+            key(playerBackend) {
+                PlayerSurface(
+                    player = player,
+                    surfaceType = SURFACE_TYPE_SURFACE_VIEW,
+                    modifier =
+                        scaledModifier.onSizeChanged {
+                            playerSurfaceSize = it
+                        },
+                )
+            }
+            if (player is VlcPlayer) {
+                // libVLC draws subtitles here; without it, it renders video through OpenGL instead
+                AndroidView(
+                    factory = { context ->
+                        SurfaceView(context).apply {
+                            setZOrderMediaOverlay(true)
+                            holder.setFormat(PixelFormat.TRANSLUCENT)
+                        }
                     },
-            )
+                    update = { player.subtitlesView = it },
+                    onRelease = { if (player.subtitlesView === it) player.subtitlesView = null },
+                    modifier = scaledModifier,
+                )
+            }
             if (presentationState.coverSurface) {
                 Box(
                     Modifier
                         .matchParentSize()
                         .background(Color.Black),
                 ) {
-                    LoadingPage(focusEnabled = false)
+                    LoadingPage(focusEnabled = false, label = rememberDownloadSpeed())
                 }
             } else {
                 AnimatedVisibility(
@@ -406,6 +422,7 @@ fun PlaybackPageContent(
                 ) {
                     LoadingPage(
                         focusEnabled = false,
+                        label = rememberDownloadSpeed(),
                         modifier =
                             Modifier
                                 .fillMaxSize()
@@ -507,8 +524,8 @@ fun PlaybackPageContent(
                     playback = state,
                     settings = theaterPlaybackSettings(state, showDebugInfo, playbackSpeed, contentScale, userDto, playerBackend),
                     showClock = preferences.appPreferences.interfacePreferences.showClock,
-                    enableSubtitleDelay = player is MpvPlayer,
-                    enableVideoScale = player !is MpvPlayer,
+                    enableSubtitleDelay = player is VlcPlayer,
+                    enableVideoScale = true,
                     trickplayUrlFor = viewModel::getTrickplayUrl,
                     onPlaybackActionClick = onPlaybackActionClick,
                     onChangeSubtitleDelay = { viewModel.updateSubtitleDelay(it) },
@@ -817,7 +834,7 @@ fun PlaybackPageContent(
                         remember(userDto) { userDto?.policy?.let { it.isAdministrator || it.enableSubtitleManagement } == true },
                     // TODO Passing through audio prevents changing playback speed
                     // See https://github.com/damontecres/Wholphin/issues/164
-                    playbackSpeedEnabled = playerBackend == PlayerBackend.MPV || state.currentPlayback?.audioDecoder != null,
+                    playbackSpeedEnabled = playerBackend == PlayerBackend.VLC || state.currentPlayback?.audioDecoder != null,
                     maxBitrate = state.maxBitrate,
                 ),
             onDismissRequest = {
@@ -846,8 +863,33 @@ fun PlaybackPageContent(
             },
             onPlaybackActionClick = onPlaybackActionClick,
             onChangeSubtitleDelay = { viewModel.updateSubtitleDelay(it) },
-            enableSubtitleDelay = player is MpvPlayer,
-            enableVideoScale = player !is MpvPlayer,
+            enableSubtitleDelay = player is VlcPlayer,
+            enableVideoScale = true,
         )
     }
+}
+
+/**
+ * How fast the app is downloading, sampled from the per-app traffic counters while shown, so it
+ * covers both ExoPlayer and libVLC. Null until the first sample, or if the device has no counters.
+ */
+@Composable
+private fun rememberDownloadSpeed(): String? {
+    var speed by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        val uid = Process.myUid()
+        var lastBytes = TrafficStats.getUidRxBytes(uid)
+        if (lastBytes == TrafficStats.UNSUPPORTED.toLong()) return@LaunchedEffect
+        var lastTime = SystemClock.elapsedRealtime()
+        while (true) {
+            delay(500)
+            val bytes = TrafficStats.getUidRxBytes(uid)
+            val now = SystemClock.elapsedRealtime()
+            val bytesPerSecond = (bytes - lastBytes) * 1000 / (now - lastTime).coerceAtLeast(1)
+            speed = formatBytes(bytesPerSecond.coerceAtLeast(0)) + "/s"
+            lastBytes = bytes
+            lastTime = now
+        }
+    }
+    return speed
 }

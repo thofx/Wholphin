@@ -29,4 +29,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "Wholphin"
 include(":app")
-include(":wholphin-mpv-stub")

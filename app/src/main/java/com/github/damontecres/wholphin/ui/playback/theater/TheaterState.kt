@@ -175,6 +175,6 @@ fun theaterPlaybackSettings(
     subtitleDelay = playback.currentPlayback?.subtitleDelay ?: Duration.ZERO,
     hasSubtitleDownloadPermission = userDto?.policy?.let { it.isAdministrator || it.enableSubtitleManagement } == true,
     // Same rule as upstream: passing through audio prevents changing playback speed
-    playbackSpeedEnabled = playerBackend == PlayerBackend.MPV || playback.currentPlayback?.audioDecoder != null,
+    playbackSpeedEnabled = playerBackend == PlayerBackend.VLC || playback.currentPlayback?.audioDecoder != null,
     maxBitrate = playback.maxBitrate,
 )

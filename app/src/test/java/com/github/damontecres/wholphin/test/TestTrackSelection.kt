@@ -23,7 +23,7 @@ class TestTrackSelection {
      */
     private fun buildEmbeddedTracks(backend: PlayerBackend): Tracks {
         val formats =
-            if (backend == PlayerBackend.MPV) {
+            if (backend == PlayerBackend.VLC) {
                 val video =
                     Format
                         .Builder()
@@ -86,7 +86,7 @@ class TestTrackSelection {
      */
     private fun buildNoEmbeddedTracks(backend: PlayerBackend): Tracks {
         val formats =
-            if (backend == PlayerBackend.MPV) {
+            if (backend == PlayerBackend.VLC) {
                 val video =
                     Format
                         .Builder()
@@ -169,7 +169,7 @@ class TestTrackSelection {
         selectedIndex: Int,
     ): Tracks {
         val formats =
-            if (backend == PlayerBackend.MPV) {
+            if (backend == PlayerBackend.VLC) {
                 val video =
                     Format
                         .Builder()
@@ -237,7 +237,7 @@ class TestTrackSelection {
 
     private fun buildMissingIdTracks(backend: PlayerBackend): Tracks {
         val formats =
-            if (backend == PlayerBackend.MPV) {
+            if (backend == PlayerBackend.VLC) {
                 val video =
                     Format
                         .Builder()
@@ -303,7 +303,7 @@ class TestTrackSelection {
 
     private fun buildDifferentOrderedTracks(backend: PlayerBackend): Tracks {
         val formats =
-            if (backend == PlayerBackend.MPV) {
+            if (backend == PlayerBackend.VLC) {
                 val video =
                     Format
                         .Builder()
@@ -385,12 +385,12 @@ class TestTrackSelection {
     }
 
     @Test
-    fun `test MPV embedded`() {
+    fun `test VLC embedded`() {
         val resource = javaClass.classLoader?.getResource("embedded_subs.json")
         Assert.assertNotNull(resource)
         val fileContents = Paths.get(resource!!.toURI()).readText()
         val source = Json.decodeFromString<MediaSourceInfo>(fileContents)
-        val tracks = buildEmbeddedTracks(PlayerBackend.MPV)
+        val tracks = buildEmbeddedTracks(PlayerBackend.VLC)
         Assert.assertEquals(7, source.mediaStreams?.size)
 
         val trackSelectionParameters = TrackSelectionParameters.Builder().build()
@@ -500,12 +500,12 @@ class TestTrackSelection {
     }
 
     @Test
-    fun `test MPV no embedded`() {
+    fun `test VLC no embedded`() {
         val resource = javaClass.classLoader?.getResource("no_embedded_subs.json")
         Assert.assertNotNull(resource)
         val fileContents = Paths.get(resource!!.toURI()).readText()
         val source = Json.decodeFromString<MediaSourceInfo>(fileContents)
-        val tracks = buildNoEmbeddedTracks(PlayerBackend.MPV)
+        val tracks = buildNoEmbeddedTracks(PlayerBackend.VLC)
         Assert.assertEquals(5, source.mediaStreams?.size)
 
         val trackSelectionParameters = TrackSelectionParameters.Builder().build()
@@ -563,12 +563,12 @@ class TestTrackSelection {
     }
 
     @Test
-    fun `test MPV external`() {
+    fun `test VLC external`() {
         val resource = javaClass.classLoader?.getResource("external_subs.json")
         Assert.assertNotNull(resource)
         val fileContents = Paths.get(resource!!.toURI()).readText()
         val source = Json.decodeFromString<MediaSourceInfo>(fileContents)
-        val tracks = buildExternalTracks(PlayerBackend.MPV, 0)
+        val tracks = buildExternalTracks(PlayerBackend.VLC, 0)
         Assert.assertEquals(6, source.mediaStreams?.size)
 
         val trackSelectionParameters = TrackSelectionParameters.Builder().build()
@@ -721,12 +721,12 @@ class TestTrackSelection {
     }
 
     @Test
-    fun `test MPV missing ids`() {
+    fun `test VLC missing ids`() {
         val resource = javaClass.classLoader?.getResource("no_embedded_subs.json")
         Assert.assertNotNull(resource)
         val fileContents = Paths.get(resource!!.toURI()).readText()
         val source = Json.decodeFromString<MediaSourceInfo>(fileContents)
-        val tracks = buildMissingIdTracks(PlayerBackend.MPV)
+        val tracks = buildMissingIdTracks(PlayerBackend.VLC)
         val ids = tracks.groups.flatMap { g -> (0..<g.length).map { g.getTrackFormat(it).id } }
         println(ids)
 

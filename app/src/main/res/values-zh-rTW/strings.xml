@@ -127,9 +127,6 @@
     <string name="background_color">背景顏色</string>
     <string name="reset">重設</string>
     <string name="bold_font">粗體</string>
-    <string name="mpv_hardware_decoding">MPV：使用硬體解碼</string>
-    <string name="disable_if_crash">遇到崩潰時請停用</string>
-    <string name="mpv_options">MPV 選項</string>
     <string name="exoplayer_options">ExoPlayer 選項</string>
     <string name="skip_segment_commercial">跳過廣告</string>
     <string name="skip_segment_preview">跳過預告</string>
@@ -274,8 +271,6 @@
     <string name="verbose_logging">詳細日誌記錄</string>
     <string name="require_pin_code">使用 PIN 鍵登入</string>
     <string name="media_information">媒體資訊</string>
-    <string name="mpv_use_gpu_next">MPV：使用 gpu-next</string>
-    <string name="mpv_conf">編輯 mpv.conf</string>
     <string name="discard_change">放棄變更？</string>
     <string name="enter_pin">輸入 PIN 碼</string>
     <string name="sign_in_auto">自動登入</string>
@@ -391,7 +386,6 @@
     <string name="voice_error_timeout">語音辨識逾時</string>
     <string name="retry">重試</string>
     <string name="software_decoding_av1">AV1 軟體解碼</string>
-    <string name="upgrade_mpv_toast">除了 HDR 影片外，MPV 已成為預設播放器。 \n您可以在設定中變更此設定。</string>
     <string name="hdr_subtitle_style">HDR 字幕樣式</string>
     <string name="contrast">對比</string>
     <string name="saturation">飽和度</string>
@@ -479,8 +473,6 @@
     <string name="subtitle_edge_shadow">陰影</string>
     <string name="background_style_wrap">貼合文字</string>
     <string name="background_style_boxed">長方底框</string>
-    <string name="prefer_mpv">優先使用 MPV</string>
-    <string name="player_backend_options_subtitles_prefer_mpv">僅 HDR 使用 ExoPlayer 播放</string>
     <string name="favorite_items_title">我的最愛的 %s</string>
     <string name="display_preset_default">Wholphin 預設樣式</string>
     <string name="display_preset_compact">Wholphin 緊湊樣式</string>
@@ -575,6 +567,8 @@
     <string name="ass_subtitle_playback">SSA/ASS 字幕播放方式</string>
     <string name="last_played">上次播放</string>
     <string name="next_up_never">不顯示</string>
+    <string name="exo_then_vlc">ExoPlayer 優先，VLC 備援</string>
+    <string name="player_backend_options_subtitles_exo_then_vlc">ExoPlayer 無法播放時自動切換到 VLC</string>
     <string name="external_player">外部播放器</string>
     <string name="system_default">系統預設</string>
     <string name="skip_behavior">跳過行為</string>

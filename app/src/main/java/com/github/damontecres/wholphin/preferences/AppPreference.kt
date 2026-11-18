@@ -937,7 +937,7 @@ sealed interface AppPreference<Pref, T> {
         val PlayerBackendPref =
             AppChoicePreference<AppPreferences, PlayerBackend>(
                 title = R.string.player_backend,
-                defaultValue = PlayerBackend.EXO_PLAYER,
+                defaultValue = PlayerBackend.EXO_THEN_VLC,
                 getter = { it.playbackPreferences.playerBackend },
                 setter = { prefs, value ->
                     prefs.updatePlaybackPreferences { playerBackend = value }
@@ -965,45 +965,10 @@ sealed interface AppPreference<Pref, T> {
                 destination = Destination.Settings(PreferenceScreenOption.EXO_PLAYER),
             )
 
-        val MpvSettings =
-            AppDestinationPreference<AppPreferences>(
-                title = R.string.mpv_options,
-                destination = Destination.Settings(PreferenceScreenOption.MPV),
-            )
-
         val HdrFormatSettings =
             AppDestinationPreference<AppPreferences>(
                 title = R.string.hdr_formats,
                 destination = Destination.Settings(PreferenceScreenOption.HDR_FORMATS),
-            )
-
-        val MpvHardwareDecoding =
-            AppSwitchPreference<AppPreferences>(
-                title = R.string.mpv_hardware_decoding,
-                defaultValue = true,
-                getter = { it.playbackPreferences.mpvOptions.enableHardwareDecoding },
-                setter = { prefs, value ->
-                    prefs.updateMpvOptions { enableHardwareDecoding = value }
-                },
-                summary = R.string.disable_if_crash,
-            )
-
-        val MpvGpuNext =
-            AppSwitchPreference<AppPreferences>(
-                title = R.string.mpv_use_gpu_next,
-                defaultValue = false,
-                getter = { it.playbackPreferences.mpvOptions.useGpuNext },
-                setter = { prefs, value ->
-                    prefs.updateMpvOptions { useGpuNext = value }
-                },
-                summaryOn = R.string.enabled,
-                summaryOff = R.string.disabled,
-            )
-
-        val MpvConfFile =
-            AppClickablePreference<AppPreferences>(
-                title = R.string.mpv_conf,
-                summary = null,
             )
 
         val DebugLogging =
@@ -1270,21 +1235,6 @@ val HdrFormatPreferences =
         ),
     )
 
-private val MpvSettings =
-    listOf(
-        AppPreference.MpvHardwareDecoding,
-        AppPreference.MpvGpuNext,
-        AppPreference.MpvConfFile,
-    )
-
-val MpvPreferences =
-    listOf(
-        PreferenceGroup(
-            title = R.string.mpv_options,
-            preferences = MpvSettings,
-        ),
-    )
-
 val SkipSegmentPreferences =
     listOf(
         PreferenceGroup(
@@ -1349,15 +1299,8 @@ val advancedPreferences =
                             ExoPlayerSettings,
                         ),
                         ConditionalPreferences(
-                            { it.playbackPreferences.playerBackend == PlayerBackend.MPV },
-                            MpvSettings,
-                        ),
-                        ConditionalPreferences(
-                            { it.playbackPreferences.playerBackend == PlayerBackend.PREFER_MPV },
-                            listOf(
-                                AppPreference.ExoPlayerSettings,
-                                AppPreference.MpvSettings,
-                            ),
+                            { it.playbackPreferences.playerBackend == PlayerBackend.EXO_THEN_VLC },
+                            ExoPlayerSettings,
                         ),
                         ConditionalPreferences(
                             { it.playbackPreferences.playerBackend == PlayerBackend.EXTERNAL_PLAYER },

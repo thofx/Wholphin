@@ -261,9 +261,6 @@
     <string name="background_color">Hintergrundfarbe</string>
     <string name="reset">Zurücksetzen</string>
     <string name="bold_font">Fettschrift</string>
-    <string name="mpv_hardware_decoding">MPV: Hardware-Dekodierung verwenden</string>
-    <string name="disable_if_crash">Deaktivieren, wenn Abstürze auftreten</string>
-    <string name="mpv_options">MPV Optionen</string>
     <string name="exoplayer_options">ExoPlayer Optionen</string>
     <string name="combine_continue_next"><![CDATA[Kombiniere Weiterschauen &amp; Als Nächstes]]></string>
     <string name="nav_drawer_pins_summary">Wähle die Standardobjekte zur Anzeige aus, andere werden ausgeblendet</string>
@@ -293,8 +290,6 @@
     <string name="no_servers_found">Keine Server gefunden</string>
     <string name="media_information">Medieninformation</string>
     <string name="played">Abgespielt</string>
-    <string name="mpv_use_gpu_next">MPV: Benutze gpu-next</string>
-    <string name="mpv_conf">mpv.conf bearbeiten</string>
     <string name="discard_change">Änderungen verwerfen?</string>
     <string name="subtitle_margin">Abstand</string>
     <string name="enter_pin">PIN Eingeben</string>
@@ -374,7 +369,6 @@
     <string name="trending">Im Trend</string>
     <string name="voice_error_start_failed">Starten der Spracherkennung fehlgeschlagen</string>
     <string name="press_back_to_cancel">Zurück wählen um abzubrechen</string>
-    <string name="upgrade_mpv_toast">MPV ist jetzt der Standard-Player, außer für HDR.\nDu kannst dies in den Einstellungen ändern.</string>
     <string name="voice_search">Sprachsuche</string>
     <string name="voice_search_prompt">Sprechen, um zu suchen</string>
     <string name="force_dovi_profile_7_summary">Ignoriert Gerätekompatibilitätsprüfungen</string>
@@ -496,8 +490,6 @@
     <string name="magenta">Magenta</string>
     <string name="subtitle_edge_outline">Umrandung</string>
     <string name="subtitle_edge_shadow">Schatten</string>
-    <string name="prefer_mpv">MPV bevorzugen</string>
-    <string name="player_backend_options_subtitles_prefer_mpv">ExoPlayer für HDR-Wiedergabe verwenden</string>
     <string name="aspect_ratios_poster">Poster (2:3)</string>
     <string name="aspect_ratios_16_9">16:9</string>
     <string name="aspect_ratios_4_3">4:3</string>

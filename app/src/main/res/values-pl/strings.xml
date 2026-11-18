@@ -149,13 +149,9 @@
     <string name="require_pin_code">Wymagaj PIN dla profilu</string>
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
-    <string name="mpv_use_gpu_next">MPV: użyj gpu-next</string>
-    <string name="mpv_conf">Edytuj mpv.conf</string>
     <string name="discard_change">Odrzucić zmiany?</string>
     <string name="press_enter_to_confirm">Naciśnij środek aby potwierdzić</string>
     <string name="image_cache_size">Rozmiar pamięci tymczasowej obrazów (MB)</string>
-    <string name="disable_if_crash">Wyłącz jeśli doświadczasz problemów</string>
-    <string name="mpv_options">Opcje MPV</string>
     <string name="exoplayer_options">Opcje odtwarzacza ExoPlayer</string>
     <string name="skip_segment_unknown">Pomiń segmenty</string>
     <string name="skip_segment_commercial">Pomiń reklamy</string>
@@ -176,7 +172,6 @@
     <string name="settings">Ustawienia</string>
     <string name="send_crash_reports">Wyślij raport o błędach</string>
     <string name="update_available">Dostępna aktualizacja</string>
-    <string name="mpv_hardware_decoding">MPV: używaj dekodowania sprzętowego</string>
     <string name="filter">Filtruj</string>
     <string name="italic_font">Czcionka kursywy</string>
     <plurals name="behind_the_scenes">
@@ -324,7 +319,6 @@
     <string name="upcoming_tv">Nadchodzące seriale</string>
     <string name="request_4k">Poproś o 4K</string>
     <string name="software_decoding_av1">AV1 dekodowanie programowe</string>
-    <string name="upgrade_mpv_toast">MPV jest teraz domyślnym odtwarzaczem, z wyjątkiem HDR.\nMożesz to zmienić w ustawieniach.</string>
     <string name="hdr_subtitle_style">Styl napisów HDR</string>
     <string name="rotate_left">Obróć w lewo</string>
     <string name="rotate_right">Obróć w prawo</string>
@@ -417,8 +411,6 @@
     <string name="subtitle_edge_outline">Ramka</string>
     <string name="background_style_wrap">Zawijaj</string>
     <string name="background_style_boxed">Opakowane</string>
-    <string name="prefer_mpv">Preferuj MPV</string>
-    <string name="player_backend_options_subtitles_prefer_mpv">Użyj ExoPlayera do odtwarzania HDR</string>
     <string name="aspect_ratios_poster">Plakat (2:3)</string>
     <string name="aspect_ratios_16_9">16:9</string>
     <string name="aspect_ratios_4_3">4:3</string>

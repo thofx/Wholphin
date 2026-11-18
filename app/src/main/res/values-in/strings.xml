@@ -252,9 +252,6 @@
     <string name="reset">Atur Ulang</string>
     <string name="bold_font">Teks tebal</string>
     <string name="player_backend">Backend Pemutaran</string>
-    <string name="mpv_hardware_decoding">MPV: Gunakan dekoding hardware</string>
-    <string name="disable_if_crash">Nonaktifkan jika terjadi crash</string>
-    <string name="mpv_options">Pengaturan MPV</string>
     <string name="exoplayer_options">Pengaturan ExoPlayer</string>
     <plurals name="downloads">
         <item quantity="other">%s unduhan</item>
@@ -273,8 +270,6 @@
     <string name="dolby_vision">Dolby Vision</string>
     <string name="dolby_atmos">Dolby Atmos</string>
     <string name="media_information">Informasi Media</string>
-    <string name="mpv_use_gpu_next">MPV: Gunakan gpu-next</string>
-    <string name="mpv_conf">Edit mpv.conf</string>
     <string name="discard_change">Batalkan perubahan?</string>
     <string name="enter_pin">Masukkan PIN</string>
     <string name="sign_in_auto">Masuk secara otomatis</string>
@@ -391,7 +386,6 @@
     <string name="request">Minta</string>
     <string name="pending">Tertunda</string>
     <string name="software_decoding_av1">Dekode perangkat lunak AV1</string>
-    <string name="upgrade_mpv_toast">MPV sekarang adalah pemutar bawaan kecuali konten HDR.\nPerubahan dapat dilakukan di menu pengaturan.</string>
     <string name="hdr_subtitle_style">Gaya subtitel HDR</string>
     <string name="image_subtitle_opacity">Opasitas subtitel gambar</string>
     <string name="brightness">Kecerahan</string>
@@ -493,8 +487,6 @@
     <string name="cyan">Sian</string>
     <string name="magenta">Magenta</string>
     <string name="subtitle_edge_outline">Garis luar</string>
-    <string name="prefer_mpv">Utamakan MPV</string>
-    <string name="player_backend_options_subtitles_prefer_mpv">Gunakan ExoPlayer untuk pemutaran HDR</string>
     <string name="aspect_ratios_poster">Poster (2:3)</string>
     <string name="aspect_ratios_16_9">16:9</string>
     <string name="aspect_ratios_4_3">4:3</string>
