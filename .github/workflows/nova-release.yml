@@ -34,13 +34,21 @@ jobs:
           git fetch --no-tags "$UPSTREAM_REPO" '+refs/tags/v*:refs/tags/v*'
           echo "VERSION_NAME=$(git describe --tags --long --match 'v*')" >> "$GITHUB_ENV"
 
-      - name: Check signing secrets
+      # Without the extensions credentials the build silently falls back to an MPV stub and drops the
+      # FFmpeg/AV1 decoders, so fail instead of publishing an incomplete app
+      - name: Check secrets
         env:
           KEY_ALIAS: "${{ secrets.KEY_ALIAS }}"
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
+          EXTENSIONS_USERNAME: "${{ secrets.EXTENSIONS_USERNAME }}"
+          EXTENSIONS_PASSWORD: "${{ secrets.EXTENSIONS_PASSWORD }}"
         run: |
           if [[ -z "$KEY_ALIAS" || -z "$SIGNING_KEY" ]]; then
             echo "::error::Missing signing secrets: KEY_ALIAS, KEY_PASSWORD, KEY_STORE_PASSWORD, SIGNING_KEY"
+            exit 1
+          fi
+          if [[ -z "$EXTENSIONS_USERNAME" || -z "$EXTENSIONS_PASSWORD" ]]; then
+            echo "::error::Missing EXTENSIONS_USERNAME / EXTENSIONS_PASSWORD (a token with read:packages, for MPV and FFmpeg)"
             exit 1
           fi
 
@@ -53,7 +61,21 @@ jobs:
           KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
           KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
           SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
+          ORG_GRADLE_PROJECT_WholphinExtensionsUsername: "${{ secrets.EXTENSIONS_USERNAME }}"
+          ORG_GRADLE_PROJECT_WholphinExtensionsPassword: "${{ secrets.EXTENSIONS_PASSWORD }}"
         run: ./gradlew clean assembleDefaultRelease
+
+      - name: Check native libraries
+        run: |
+          find app/build/outputs/apk -name '*.apk' -print0 |
+            while IFS= read -r -d '' apk; do
+              for lib in libmpv.so libffmpegJNI.so libdav1dJNI.so; do
+                if ! unzip -l "$apk" | grep -q "/$lib"; then
+                  echo "::error::$lib missing from $(basename "$apk")"
+                  exit 1
+                fi
+              done
+            done
 
       - name: Verify signatures
         run: |
