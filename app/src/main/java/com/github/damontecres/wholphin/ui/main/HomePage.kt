@@ -52,6 +52,7 @@ import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowConfig
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
 import com.github.damontecres.wholphin.data.model.QuickDetailsData
+import com.github.damontecres.wholphin.preferences.BackdropStyle
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.BannerCard
@@ -79,6 +80,8 @@ import com.github.damontecres.wholphin.ui.data.RowColumn
 import com.github.damontecres.wholphin.ui.detail.PlaylistDialog
 import com.github.damontecres.wholphin.ui.indexOfFirstOrNull
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
+import com.github.damontecres.wholphin.ui.main.nova.NovaHomeContent
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.playback.playable
@@ -213,21 +216,39 @@ fun HomePage(
                     }
                 }
 
-            HomePageContent(
-                homeRows = homeRows,
-                position = position,
-                onFocusPosition = onFocusPosition,
-                onClickItem = onClickItem,
-                onLongClickItem = onLongClickItem,
-                onClickPlay = onClickPlay,
-                loadingState = refreshing,
-                showClock = preferences.appPreferences.interfacePreferences.showClock,
-                onUpdateBackdrop = viewModel::updateBackdrop,
-                showLogo = preferences.appPreferences.interfacePreferences.showLogos,
-                showViewMore = true,
-                onClickViewMore = onClickViewMore,
-                modifier = modifier,
-            )
+            if (NOVA_HOME_ENABLED) {
+                NovaHomeContent(
+                    homeRows = homeRows,
+                    position = position,
+                    onFocusPosition = onFocusPosition,
+                    onClickItem = onClickItem,
+                    onLongClickItem = onLongClickItem,
+                    onClickPlay = onClickPlay,
+                    loadingState = refreshing,
+                    onUpdateBackdrop = viewModel::updateBackdrop,
+                    showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                    showBackdrop =
+                        preferences.appPreferences.interfacePreferences.backdropStyle != BackdropStyle.BACKDROP_NONE,
+                    onClickViewMore = onClickViewMore,
+                    modifier = modifier,
+                )
+            } else {
+                HomePageContent(
+                    homeRows = homeRows,
+                    position = position,
+                    onFocusPosition = onFocusPosition,
+                    onClickItem = onClickItem,
+                    onLongClickItem = onLongClickItem,
+                    onClickPlay = onClickPlay,
+                    loadingState = refreshing,
+                    showClock = preferences.appPreferences.interfacePreferences.showClock,
+                    onUpdateBackdrop = viewModel::updateBackdrop,
+                    showLogo = preferences.appPreferences.interfacePreferences.showLogos,
+                    showViewMore = true,
+                    onClickViewMore = onClickViewMore,
+                    modifier = modifier,
+                )
+            }
             overviewDialog?.let { info ->
                 ItemDetailsDialog(
                     info = info,

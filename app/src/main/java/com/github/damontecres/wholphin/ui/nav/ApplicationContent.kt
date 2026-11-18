@@ -21,6 +21,8 @@ import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.ui.components.ErrorMessage
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
+import com.github.damontecres.wholphin.ui.main.nova.NovaHomeFrame
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -82,6 +84,16 @@ fun ApplicationContent(
                         DestinationContent(
                             destination = key,
                             preferences = preferences,
+                            onClearBackdrop = viewModel::clearBackdrop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else if (NOVA_HOME_ENABLED && key is Destination.Home && user != null && server != null) {
+                        // Nova: the home page has a top bar instead of the nav drawer
+                        NovaHomeFrame(
+                            destination = key,
+                            preferences = preferences,
+                            user = user,
+                            server = server,
                             onClearBackdrop = viewModel::clearBackdrop,
                             modifier = Modifier.fillMaxSize(),
                         )
