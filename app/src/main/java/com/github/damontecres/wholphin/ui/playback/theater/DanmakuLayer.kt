@@ -50,6 +50,9 @@ private const val MAX_LATE_MS = 1_000L
 /** How far ahead of playback comments are pre-rendered in the background */
 private const val PRERENDER_AHEAD_MS = 1_500L
 
+/** Upper bound of bitmaps waiting in the pre-render cache, whatever the data's density */
+private const val PRERENDER_MAX_READY = 64
+
 /** Gap kept between comments in a lane, in px */
 private const val LANE_GAP_PX = 32f
 
@@ -95,7 +98,8 @@ private class DanmakuPrerenderer(
             // After a seek backwards the cursor is far ahead of the new position: restart from the scheduler
             if (cursor < items.size && items[cursor].timeMs > positionMs + PRERENDER_AHEAD_MS * 4) cursor = consumedIndex
             val horizon = positionMs + PRERENDER_AHEAD_MS
-            while (cursor < items.size && items[cursor].timeMs <= horizon) {
+            // Stop at the cap (e.g. thousands of comments in one second); the scheduler's takes make room
+            while (cursor < items.size && items[cursor].timeMs <= horizon && ready.size < PRERENDER_MAX_READY) {
                 val danmaku = items[cursor]
                 if (keepAtDensity(danmaku, densityPercent) && !ready.containsKey(cursor)) ready[cursor] = render(danmaku)
                 cursor++

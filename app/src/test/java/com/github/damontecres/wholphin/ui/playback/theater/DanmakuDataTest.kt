@@ -70,6 +70,12 @@ class DanmakuDataTest {
     }
 
     @Test
+    fun parse_truncatesVeryLongText() {
+        val result = DanmakuLoader.parse("""<d p="1.0,1,25,0">${"x".repeat(50_000)}</d>""")
+        assertTrue(result.single().text.length <= 101)
+    }
+
+    @Test
     fun parse_spreadsWholeSecondTimes() {
         val xml = (0 until 20).joinToString("") { """<d p="7.00000,1,25,0">c$it</d>""" }
         val times = DanmakuLoader.parse(xml).map { it.timeMs }

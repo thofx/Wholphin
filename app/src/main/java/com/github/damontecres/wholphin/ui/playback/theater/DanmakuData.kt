@@ -58,6 +58,9 @@ fun Context.danmakuHttpClient(): OkHttpClient =
  * `/api/danmu/{id}/raw` returns the Bilibili style XML, or 404 when there is none (or the plugin is missing).
  */
 object DanmakuLoader {
+    /** Comments are third-party content: bound their length, and so the width of their bitmaps */
+    private const val MAX_TEXT_LENGTH = 100
+
     /** Tolerates extra attributes and whitespace around `p` */
     private val entryRegex = Regex("""<d\s+p="([^"]*)"[^>]*>([^<]*)</d>""")
 
@@ -126,7 +129,7 @@ object DanmakuLoader {
     ): Entry? {
         val params = p.split(',')
         val timeSec = params.getOrNull(0)?.toDoubleOrNull() ?: return null
-        val text = unescape(rawText).trim()
+        val text = unescape(rawText).trim().let { if (it.length > MAX_TEXT_LENGTH) it.take(MAX_TEXT_LENGTH) + "…" else it }
         if (text.isEmpty()) return null
         val type =
             when (params.getOrNull(1)?.toIntOrNull()) {
