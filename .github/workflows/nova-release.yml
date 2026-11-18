@@ -1,0 +1,89 @@
+# Nova: release of this fork's own build.
+# Push a tag like nova-v1 on the nova branch to build a signed APK and publish a GitHub release.
+# Kept in its own file so upstream's workflows stay untouched.
+name: Nova release
+
+on:
+  push:
+    tags:
+      - nova-v*
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx12g -XX:MaxMetaspaceSize=1024m'"
+  TAG_NAME: ${{ github.ref_name }}
+  UPSTREAM_REPO: https://github.com/damontecres/Wholphin.git
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      # The version name and code come from upstream's v* tags, which the fork does not have
+      - name: Fetch upstream version tags
+        run: |
+          git fetch --no-tags "$UPSTREAM_REPO" '+refs/tags/v*:refs/tags/v*'
+          git describe --tags --long --match 'v*'
+
+      - name: Check signing secrets
+        env:
+          KEY_ALIAS: "${{ secrets.KEY_ALIAS }}"
+          SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
+        run: |
+          if [[ -z "$KEY_ALIAS" || -z "$SIGNING_KEY" ]]; then
+            echo "::error::Missing signing secrets: KEY_ALIAS, KEY_PASSWORD, KEY_STORE_PASSWORD, SIGNING_KEY"
+            exit 1
+          fi
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build app
+        env:
+          KEY_ALIAS: "${{ secrets.KEY_ALIAS }}"
+          KEY_PASSWORD: "${{ secrets.KEY_PASSWORD }}"
+          KEY_STORE_PASSWORD: "${{ secrets.KEY_STORE_PASSWORD }}"
+          SIGNING_KEY: "${{ secrets.SIGNING_KEY }}"
+        run: ./gradlew clean assembleDefaultRelease
+
+      - name: Verify signatures
+        run: |
+          find app/build/outputs/apk -name '*.apk' -print0 |
+            xargs -0 -n1 "${ANDROID_SDK_ROOT}/build-tools/${BUILD_TOOLS_VERSION}/apksigner" verify --verbose --print-certs
+
+      # Wholphin-default-release-0.6.2-15-gabc1234-140-arm64-v8a.apk => Wholphin-nova-v1-arm64-v8a.apk
+      - name: Rename APKs
+        run: |
+          mkdir -p release
+          find app/build/outputs/apk -name '*.apk' -print0 |
+            while IFS= read -r -d '' apk; do
+              name="$(basename "$apk" | sed -E "s/-default-release-[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-g[a-fA-F0-9]+-[0-9]+/-${TAG_NAME}/")"
+              cp "$apk" "release/$name"
+            done
+          sha256sum release/*.apk
+
+      - name: Upload mapping files
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: mapping
+          path: app/build/outputs/**/mapping.txt
+          compression-level: 6
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$TAG_NAME" \
+            --title "$TAG_NAME" \
+            --verify-tag \
+            --generate-notes \
+            release/*.apk
