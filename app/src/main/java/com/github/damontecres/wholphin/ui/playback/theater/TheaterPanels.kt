@@ -49,6 +49,7 @@ import com.github.damontecres.wholphin.ui.formatMaxBitrate
 import com.github.damontecres.wholphin.ui.playback.PlaybackSettings
 import com.github.damontecres.wholphin.ui.playback.isDpadLeft
 import com.github.damontecres.wholphin.ui.playback.isDpadRight
+import com.github.damontecres.wholphin.ui.playback.isEnterKey
 import com.github.damontecres.wholphin.ui.playback.overlay.PlaybackAction
 import com.github.damontecres.wholphin.ui.playback.playbackScaleOptions
 import com.github.damontecres.wholphin.ui.playback.playbackSpeedOptions
@@ -74,11 +75,22 @@ private fun PanelFrame(
 ) {
     val listState = rememberLazyListState((initialIndex - 2).coerceAtLeast(0))
     LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+    // A panel opened by a long press gets that press's remaining repeats and release: without a fresh press of its
+    // own, they must not click the item that just got focus (e.g. toggle danmaku off again)
+    val freshPress = remember { BooleanArray(1) }
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier =
             modifier
-                .width(TheaterPanelWidth)
+                .onPreviewKeyEvent {
+                    if (!isEnterKey(it) || freshPress[0]) return@onPreviewKeyEvent false
+                    if (it.type == KeyEventType.KeyDown && it.nativeKeyEvent.repeatCount == 0) {
+                        freshPress[0] = true
+                        false
+                    } else {
+                        true
+                    }
+                }.width(TheaterPanelWidth)
                 .fillMaxHeight()
                 .background(TheaterColors.PanelBackground)
                 .padding(start = 18.dp, end = 18.dp, top = 28.dp),

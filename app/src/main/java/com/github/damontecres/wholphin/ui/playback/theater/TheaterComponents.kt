@@ -83,10 +83,12 @@ fun TheaterIcon(
 fun TheaterButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
     Surface(
         onClick = onClick,
+        onLongClick = onLongClick,
         modifier = modifier.height(ButtonHeight),
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
         colors =
@@ -119,8 +121,9 @@ fun TheaterValueButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     width: Dp = ValueButtonWidth,
+    onLongClick: (() -> Unit)? = null,
 ) {
-    TheaterButton(onClick = onClick, modifier = modifier.width(width)) {
+    TheaterButton(onClick = onClick, onLongClick = onLongClick, modifier = modifier.width(width)) {
         TheaterIcon(icon)
         Column(modifier = Modifier.weight(1f)) {
             Text(

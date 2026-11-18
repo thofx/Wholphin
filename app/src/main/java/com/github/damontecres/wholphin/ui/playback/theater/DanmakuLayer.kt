@@ -23,6 +23,7 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFontFamilyResolver
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -34,6 +35,10 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
+import com.github.damontecres.wholphin.util.WholphinDispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.ceil
 
 /** How long a top/bottom comment stays */
@@ -41,6 +46,9 @@ private const val FIXED_DURATION_MS = 4_000L
 
 /** Comments more than this late (e.g. after a long frame) are dropped instead of shown mid-way */
 private const val MAX_LATE_MS = 1_000L
+
+/** How far ahead of playback comments are pre-rendered in the background */
+private const val PRERENDER_AHEAD_MS = 1_500L
 
 /** Gap kept between comments in a lane, in px */
 private const val LANE_GAP_PX = 32f
@@ -53,6 +61,49 @@ private class ActiveDanmaku(
     val width: Float,
     val lane: Int,
 )
+
+/** A comment rendered into a bitmap, with its text width in px (without the bitmap's padding) */
+private typealias RenderedDanmaku = Pair<ImageBitmap, Float>
+
+/**
+ * Renders upcoming comments into bitmaps on a background thread, [PRERENDER_AHEAD_MS] ahead of playback,
+ * so spawning a comment on the main thread is a map lookup. Items are keyed by their index in the list.
+ */
+private class DanmakuPrerenderer(
+    private val items: List<Danmaku>,
+    private val render: (Danmaku) -> RenderedDanmaku,
+) {
+    private val ready = ConcurrentHashMap<Int, RenderedDanmaku>()
+
+    /** Written by the main thread, read by [run] */
+    @Volatile var positionMs = 0L
+
+    @Volatile var densityPercent = 100
+
+    /** Index the scheduler has consumed up to: nothing before it is rendered */
+    @Volatile var consumedIndex = 0
+
+    fun take(index: Int): RenderedDanmaku? = ready.remove(index)
+
+    /** Drop what was rendered, e.g. after a seek */
+    fun clear() = ready.clear()
+
+    suspend fun run() {
+        var cursor = 0
+        while (true) {
+            cursor = maxOf(cursor, consumedIndex)
+            // After a seek backwards the cursor is far ahead of the new position: restart from the scheduler
+            if (cursor < items.size && items[cursor].timeMs > positionMs + PRERENDER_AHEAD_MS * 4) cursor = consumedIndex
+            val horizon = positionMs + PRERENDER_AHEAD_MS
+            while (cursor < items.size && items[cursor].timeMs <= horizon) {
+                val danmaku = items[cursor]
+                if (keepAtDensity(danmaku, densityPercent) && !ready.containsKey(cursor)) ready[cursor] = render(danmaku)
+                cursor++
+            }
+            delay(50)
+        }
+    }
+}
 
 /**
  * Assigns comments to lanes as playback advances. Each comment gets a lane once, when it starts,
@@ -67,7 +118,8 @@ private class DanmakuScheduler(
     private val items: List<Danmaku>,
     private val scrollMs: Long,
     private val estimateWidth: (Danmaku) -> Float,
-    private val render: (Danmaku) -> Pair<ImageBitmap, Float>,
+    private val render: (Danmaku) -> RenderedDanmaku,
+    private val prerendered: DanmakuPrerenderer,
 ) {
     val active = mutableListOf<ActiveDanmaku>()
     private var nextIndex = 0
@@ -76,6 +128,9 @@ private class DanmakuScheduler(
     fun reset(positionMs: Long) {
         active.clear()
         nextIndex = firstIndexAtOrAfter(positionMs)
+        prerendered.clear()
+        prerendered.consumedIndex = nextIndex
+        prerendered.positionMs = positionMs
     }
 
     fun update(
@@ -86,15 +141,21 @@ private class DanmakuScheduler(
     ) {
         active.removeAll { positionMs - it.danmaku.timeMs > durationOf(it.danmaku) }
         while (nextIndex < items.size && items[nextIndex].timeMs <= positionMs) {
-            val danmaku = items[nextIndex++]
+            val index = nextIndex++
+            val danmaku = items[index]
+            // Always take it out, so skipped comments do not stay in the cache
+            val cached = prerendered.take(index)
             if (positionMs - danmaku.timeMs > MAX_LATE_MS) continue
             if (!keepAtDensity(danmaku, densityPercent)) continue
-            findLane(danmaku, estimateWidth(danmaku), positionMs, width, laneCount) ?: continue
-            val (bitmap, textWidth) = render(danmaku)
+            // Not pre-rendered yet (e.g. just after a seek): check it can fit before rendering on this thread
+            if (cached == null) findLane(danmaku, estimateWidth(danmaku), positionMs, width, laneCount) ?: continue
+            val (bitmap, textWidth) = cached ?: render(danmaku)
             // The estimate is an upper bound, but check again with the real width
             val lane = findLane(danmaku, textWidth, positionMs, width, laneCount) ?: continue
             active.add(ActiveDanmaku(danmaku, bitmap, textWidth, lane))
         }
+        prerendered.consumedIndex = nextIndex
+        prerendered.positionMs = positionMs
     }
 
     /** X of a comment's text at [positionMs] */
@@ -181,7 +242,7 @@ private fun renderDanmaku(
     style: TextStyle,
     density: Density,
     pad: Int,
-): Pair<ImageBitmap, Float> {
+): RenderedDanmaku {
     val fill = Color(0xFF000000.toInt() or danmaku.color)
     val layout = textMeasurer.measure(danmaku.text, style.copy(color = fill), maxLines = 1)
     val bitmap = ImageBitmap(layout.size.width + pad * 2, layout.size.height + pad * 2)
@@ -203,6 +264,8 @@ private fun renderDanmaku(
         // Style and color must be given again: the layout's paint keeps the previous call's Stroke
         drawText(layout, color = fill, topLeft = topLeft, drawStyle = Fill)
     }
+    // Upload the texture now rather than on the frame the comment first shows
+    bitmap.prepareToDraw()
     return bitmap to layout.size.width.toFloat()
 }
 
@@ -222,6 +285,10 @@ fun DanmakuLayer(
 ) {
     val density = LocalDensity.current
     val textMeasurer = rememberTextMeasurer(cacheSize = 0)
+    // A separate measurer for the background thread: TextMeasurer is not meant to be shared across threads
+    val fontFamilyResolver = LocalFontFamilyResolver.current
+    val backgroundMeasurer =
+        remember(fontFamilyResolver, density) { TextMeasurer(fontFamilyResolver, density, LayoutDirection.Ltr, cacheSize = 0) }
     val style =
         remember(settings.size) {
             TextStyle(
@@ -236,14 +303,21 @@ fun DanmakuLayer(
     val pad = ceil(with(density) { 1.dp.toPx() } + 5f).toInt()
 
     // Speed or size changes would move or resize comments already on screen: start a new schedule instead
+    val prerenderer =
+        remember(items, style, density) {
+            DanmakuPrerenderer(items) { renderDanmaku(it, backgroundMeasurer, style, density, pad) }
+        }
+    LaunchedEffect(prerenderer) { withContext(WholphinDispatchers.Default) { prerenderer.run() } }
+    LaunchedEffect(prerenderer, settings.densityPercent) { prerenderer.densityPercent = settings.densityPercent }
     val scheduler =
-        remember(items, settings.speed, style, density) {
+        remember(items, settings.speed, style, density, prerenderer) {
             DanmakuScheduler(
                 items = items,
                 scrollMs = settings.speed.scrollMs,
                 // CJK glyphs are about 1em wide, others narrower: an upper bound
                 estimateWidth = { it.text.length * fontPx },
                 render = { renderDanmaku(it, textMeasurer, style, density, pad) },
+                prerendered = prerenderer,
             ).also { it.reset(player.currentPosition) }
         }
 

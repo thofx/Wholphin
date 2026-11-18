@@ -271,6 +271,9 @@ fun TheaterOverlay(
                         hasQueue = queue.size > 1,
                         hasDanmaku = danmaku.isNotEmpty(),
                         danmakuEnabled = danmakuSettings.value.enabled,
+                        onToggleDanmaku = {
+                            danmakuSettings.update(danmakuSettings.value.copy(enabled = !danmakuSettings.value.enabled))
+                        },
                         onSkipSegment = onSkipSegment,
                         modifier = Modifier.padding(top = 16.dp),
                     )
@@ -641,6 +644,7 @@ private fun ButtonRow(
     // The danmaku button only shows when the item has danmaku
     hasDanmaku: Boolean,
     danmakuEnabled: Boolean,
+    onToggleDanmaku: () -> Unit,
     onSkipSegment: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -752,7 +756,9 @@ private fun ButtonRow(
                     icon = TheaterIcons.Danmaku,
                     label = stringResource(R.string.theater_danmaku),
                     value = stringResource(if (danmakuEnabled) R.string.theater_on else R.string.theater_off),
-                    onClick = { state.openPanel(TheaterPanel.DANMAKU) },
+                    // Click toggles, the most common action; long press opens the settings
+                    onClick = onToggleDanmaku,
+                    onLongClick = { state.openPanel(TheaterPanel.DANMAKU) },
                     width = 128.dp,
                     modifier = Modifier.focusRequester(requesters.getValue(TheaterPanel.DANMAKU)),
                 )
