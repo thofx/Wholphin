@@ -13,4 +13,7 @@
     <string name="nova_go_home">返回首页</string>
     <string name="nova_quick_connect_prompt">请在已登录的设备上使用快速连接，登录到 %1$s</string>
     <string name="nova_overview">简介</string>
+    <string name="nova_recent_searches">最近搜索</string>
+    <string name="nova_top_rated">高分推荐</string>
+    <string name="nova_clear">清除</string>
 </resources>

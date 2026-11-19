@@ -110,6 +110,8 @@ object TheaterIcons {
         )
     val Info =
         icon(stroke = listOf("M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0", "M12 11v5.5", "M12 7.6v.4"))
+    val Clock =
+        icon(stroke = listOf("M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0", "M12 7.5V12l3 2"))
     val Restart =
         icon(stroke = listOf("M4.5 12a7.5 7.5 0 1 0 2.2-5.3", "M4.5 4.5v4h4"))
 

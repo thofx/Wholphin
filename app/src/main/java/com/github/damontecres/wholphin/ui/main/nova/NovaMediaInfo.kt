@@ -37,6 +37,9 @@ import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatSubtitleCo
 import com.github.damontecres.wholphin.util.languageName
 import org.jellyfin.sdk.model.api.MediaStream
 
+/** Room for the longest labels ("视频范围类型", "Video range type") with a gap before the value */
+private val LabelWidth = 112.dp
+
 /** Values longer than this take a whole row of the grid (paths, ids) */
 private const val LONG_VALUE = 22
 
@@ -60,14 +63,24 @@ fun NovaInfoGrid(
         rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {
                 row.forEach { (label, value) ->
+                    // Baseline aligned: CJK labels and Latin values (codecs, numbers) sit at different heights
+                    // when aligned by their tops
                     Row(modifier = Modifier.weight(1f)) {
                         Text(
                             text = label,
                             style = MaterialTheme.typography.bodyMedium,
                             color = muted,
-                            modifier = Modifier.width(88.dp),
+                            maxLines = 1,
+                            modifier =
+                                Modifier
+                                    .alignByBaseline()
+                                    .width(LabelWidth),
                         )
-                        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            text = value,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.alignByBaseline(),
+                        )
                     }
                 }
                 if (row.size == 1 && row[0].second.length <= LONG_VALUE) Spacer(Modifier.weight(1f))

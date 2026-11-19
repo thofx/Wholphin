@@ -13,4 +13,7 @@
     <string name="nova_go_home">Back to home</string>
     <string name="nova_quick_connect_prompt">Use Quick Connect on your device to sign in to %1$s</string>
     <string name="nova_overview">Overview</string>
+    <string name="nova_recent_searches">Recent searches</string>
+    <string name="nova_top_rated">Top rated</string>
+    <string name="nova_clear">Clear</string>
 </resources>

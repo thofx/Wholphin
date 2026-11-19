@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
@@ -71,6 +72,10 @@ import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.CardGridItem
 import com.github.damontecres.wholphin.ui.detail.GridItemDetails
 import com.github.damontecres.wholphin.ui.detail.livetv.ProgramDialog
+import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
+import com.github.damontecres.wholphin.ui.main.nova.NovaSearchEmpty
+import com.github.damontecres.wholphin.ui.main.nova.RecentSearches
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.titleStringRes
@@ -136,7 +141,11 @@ fun SearchPage(
         }
     }
 
+    val context = LocalContext.current
+
     fun triggerImmediateSearch(searchQuery: String) {
+        // Nova: an explicit search (keyboard, voice, a recent one) is worth remembering
+        if (NOVA_HOME_ENABLED) RecentSearches.add(context, searchQuery)
         immediateSearchQuery = searchQuery
         searchClicked = true
         viewModel.search(searchQuery, combinedMode)
@@ -159,6 +168,8 @@ fun SearchPage(
     }
     val onClickItem = { _: Int, item: BaseItem ->
         Timber.v("Clicked %s, type=%s", item.id, item.type)
+        // Nova: a query that led somewhere is remembered
+        if (NOVA_HOME_ENABLED) RecentSearches.add(context, query)
         if (item.type == BaseItemKind.TV_PROGRAM || item.type == BaseItemKind.PROGRAM || item.type == BaseItemKind.LIVE_TV_PROGRAM) {
             viewModel.fetchProgramForDialog(item.id)
             showProgramDialog = true
@@ -260,7 +271,8 @@ fun SearchPage(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Box(
-            contentAlignment = Alignment.Center,
+            // Nova: on the content's edge rather than centered
+            contentAlignment = if (NOVA_HOME_ENABLED) Alignment.CenterStart else Alignment.Center,
             modifier = Modifier.fillMaxWidth(),
         ) {
             var isSearchActive by remember { mutableStateOf(false) }
@@ -285,7 +297,7 @@ fun SearchPage(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier
-                        .padding(start = 16.dp, end = 16.dp, top = 16.dp)
+                        .padding(start = if (NOVA_HOME_ENABLED) 8.dp else 16.dp, end = 16.dp, top = 16.dp)
                         .focusGroup()
                         .focusRestorer(textFieldFocusRequester)
                         .focusRequester(focusRequesters[SEARCH_ROW]),
@@ -315,6 +327,8 @@ fun SearchPage(
                     readOnly = !isSearchActive,
                     modifier =
                         Modifier
+                            // Nova: a wide field, the page's main control
+                            .ifElse(NOVA_HOME_ENABLED, Modifier.width(560.dp))
                             .focusRequester(textFieldFocusRequester)
                             .onFocusChanged { state ->
                                 isTextFieldFocused = state.isFocused
@@ -373,6 +387,18 @@ fun SearchPage(
 //                Timber.v("isLibraryTab=%s, combinedMode=%s", isLibraryTab, combinedMode)
 //            }
             when {
+                NOVA_HOME_ENABLED && query.isBlank() -> {
+                    NovaSearchEmpty(
+                        onSearch = {
+                            query = it
+                            triggerImmediateSearch(it)
+                        },
+                        onClickItem = { viewModel.navigationManager.navigateTo(it.destination()) },
+                        onLongClickItem = { index, item -> onLongClickItem(RESULTS_START, index, item) },
+                        modifier = Modifier.padding(top = 16.dp),
+                    )
+                }
+
                 isLibraryTab && combinedMode -> {
                     SearchCombinedResults(
                         result = state.combinedResults,
