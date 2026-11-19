@@ -3,11 +3,14 @@ package com.github.damontecres.wholphin.ui.data
 import android.content.res.Resources
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
@@ -16,18 +19,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.studioNames
 import com.github.damontecres.wholphin.ui.components.ScrollableDialog
+import com.github.damontecres.wholphin.ui.components.StreamLabel
 import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.formatDate
 import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
+import com.github.damontecres.wholphin.ui.main.nova.NovaSheet
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatAudioCodec
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatSubtitleCodec
 import com.github.damontecres.wholphin.util.languageName
@@ -79,34 +86,62 @@ fun ItemDetailsDialog(
     val runtimeLabel = stringResource(R.string.runtime_sort)
     val lastPlayedLabel = stringResource(R.string.last_played)
 
-    ScrollableDialog(
-        onDismissRequest = onDismissRequest,
-        width = 680.dp,
-        maxHeight = 440.dp,
-        itemSpacing = 8.dp,
-    ) {
+    // Nova: a side panel with a readable overview; upstream's centered dialog otherwise
+    val container: @Composable (LazyListScope.() -> Unit) -> Unit =
+        if (NOVA_HOME_ENABLED) {
+            { content -> NovaSheet(onDismissRequest = onDismissRequest, content = content) }
+        } else {
+            { content ->
+                ScrollableDialog(
+                    onDismissRequest = onDismissRequest,
+                    width = 680.dp,
+                    maxHeight = 440.dp,
+                    itemSpacing = 8.dp,
+                    content = content,
+                )
+            }
+        }
+    container {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(if (NOVA_HOME_ENABLED) 18.dp else 16.dp)) {
                 Text(
                     text = info.title,
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = if (NOVA_HOME_ENABLED) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineSmall,
                 )
-                if (info.studios.isNotEmpty()) {
-                    Text(
-                        text = info.studios.joinToString(", "),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                }
-                if (info.genres.isNotEmpty()) {
-                    Text(
-                        text = info.genres.joinToString(", "),
-                        style = MaterialTheme.typography.titleSmall,
-                    )
+                if (NOVA_HOME_ENABLED) {
+                    // Studios and genres as tags
+                    val tags = info.studios + info.genres
+                    if (tags.isNotEmpty()) {
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            tags.forEach { StreamLabel(it) }
+                        }
+                    }
+                } else {
+                    if (info.studios.isNotEmpty()) {
+                        Text(
+                            text = info.studios.joinToString(", "),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                    }
+                    if (info.genres.isNotEmpty()) {
+                        Text(
+                            text = info.genres.joinToString(", "),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                    }
                 }
                 if (info.overview.isNotNullOrBlank()) {
                     Text(
                         text = info.overview,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style =
+                            if (NOVA_HOME_ENABLED) {
+                                MaterialTheme.typography.bodyLarge.copy(lineHeight = 26.sp)
+                            } else {
+                                MaterialTheme.typography.bodyMedium
+                            },
                     )
                 }
                 val lastPlayed =
@@ -172,7 +207,7 @@ fun ItemDetailsDialog(
 
                 // Audio streams - display multiple per row
                 val audioStreams = mediaStreams.filter { it.type == MediaStreamType.AUDIO }
-                itemsIndexed(audioStreams.chunked(3)) { groupIndex, streamGroup ->
+                itemsIndexed(audioStreams.chunked(StreamsPerRow)) { groupIndex, streamGroup ->
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth(),
@@ -182,7 +217,7 @@ fun ItemDetailsDialog(
                                 title =
                                     titleIndex(
                                         audioLabel,
-                                        groupIndex * 3 + index,
+                                        groupIndex * StreamsPerRow + index,
                                         audioStreams.size,
                                     ),
                                 items = buildAudioStreamInfo(resources, stream),
@@ -190,7 +225,7 @@ fun ItemDetailsDialog(
                             )
                         }
                         // Fill remaining space if less than 3 items
-                        repeat(3 - streamGroup.size) {
+                        repeat(StreamsPerRow - streamGroup.size) {
                             Spacer(modifier = Modifier.weight(1f))
                         }
                     }
@@ -198,7 +233,7 @@ fun ItemDetailsDialog(
 
                 // Subtitle streams - display multiple per row
                 val subtitleStreams = mediaStreams.filter { it.type == MediaStreamType.SUBTITLE }
-                itemsIndexed(subtitleStreams.chunked(3)) { groupIndex, streamGroup ->
+                itemsIndexed(subtitleStreams.chunked(StreamsPerRow)) { groupIndex, streamGroup ->
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth(),
@@ -208,7 +243,7 @@ fun ItemDetailsDialog(
                                 title =
                                     titleIndex(
                                         subtitleLabel,
-                                        groupIndex * 3 + index,
+                                        groupIndex * StreamsPerRow + index,
                                         subtitleStreams.size,
                                     ),
                                 items = buildSubtitleStreamInfo(resources, stream, showFilePath),
@@ -216,7 +251,7 @@ fun ItemDetailsDialog(
                             )
                         }
                         // Fill remaining space if less than 3 items
-                        repeat(3 - streamGroup.size) {
+                        repeat(StreamsPerRow - streamGroup.size) {
                             Spacer(modifier = Modifier.weight(1f))
                         }
                     }
@@ -231,6 +266,9 @@ fun ItemDetailsDialog(
     }
 }
 
+/** Audio / subtitle sections per row: Nova's side panel is narrower than upstream's dialog */
+private val StreamsPerRow = if (NOVA_HOME_ENABLED) 2 else 3
+
 @Composable
 private fun MediaInfoSection(
     title: String,
@@ -238,6 +276,28 @@ private fun MediaInfoSection(
     modifier: Modifier = Modifier,
     additional: List<Pair<String, String>> = listOf(),
 ) {
+    if (NOVA_HOME_ENABLED) {
+        // A label column and a value column, one list (the panel has no room for two side by side)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = modifier.padding(vertical = 6.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
+            )
+            (items + additional).forEach { (label, value) ->
+                Row {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .55f),
+                        modifier = Modifier.width(96.dp),
+                    )
+                    Text(text = value, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+        return
+    }
     Column(
         verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = modifier.padding(vertical = 4.dp),
