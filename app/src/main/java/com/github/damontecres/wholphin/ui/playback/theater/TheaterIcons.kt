@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.unit.dp
 
 /**
- * Line icons for the theater UI, drawn on a 24x24 grid with a 1.8 stroke so they share one visual weight.
+ * Line icons for the theater UI and the fork's other pages, drawn on a 24x24 grid with a 1.8 stroke so they share one visual weight.
  * Tinted by the caller (e.g. tv-material Icon uses the content color).
  */
 object TheaterIcons {
@@ -64,6 +64,45 @@ object TheaterIcons {
         icon(stroke = listOf("M5 12.5l4.5 4.5L19 7.5"), strokeWidth = 2.4f)
     val Chevron =
         icon(stroke = listOf("M9 6l6 6-6 6"), strokeWidth = 2f)
+
+    // Library toolbar (sort, filter, view options, random, play, shuffle), same weight as above
+    val ArrowUp =
+        icon(stroke = listOf("M12 19V5", "M6.5 10.5L12 5l5.5 5.5"), strokeWidth = 2f)
+    val ArrowDown =
+        icon(stroke = listOf("M12 5v14", "M6.5 13.5L12 19l5.5-5.5"), strokeWidth = 2f)
+    val Filter =
+        icon(stroke = listOf("M4 5h16l-6.2 7.4V19l-3.6-2v-4.6z"))
+    val Sliders =
+        icon(
+            stroke =
+                listOf(
+                    "M4 7h9M17 7h3M4 17h3M11 17h9",
+                    "M13 7a2 2 0 1 0 4 0a2 2 0 1 0 -4 0",
+                    "M7 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0",
+                ),
+        )
+    val Dice =
+        icon(
+            stroke = listOf("M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2H6a2 2 0 0 1 -2 -2V6a2 2 0 0 1 2 -2z"),
+            fill =
+                listOf(
+                    "M7.3 8.5a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0 -2.4 0z",
+                    "M10.8 12a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0 -2.4 0z",
+                    "M14.3 15.5a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0 -2.4 0z",
+                ),
+        )
+    val Play =
+        icon(fill = listOf("M8 5.5v13l11-6.5z"))
+    val Shuffle =
+        icon(
+            stroke =
+                listOf(
+                    "M4 7h3.5c3 0 4.5 10 8 10H20",
+                    "M17 14l3 3-3 3",
+                    "M4 17h3.5c1.2 0 2.1-1.6 2.9-3.5M13.6 10.5c.8-1.9 1.7-3.5 2.9-3.5H20",
+                    "M17 4l3 3-3 3",
+                ),
+        )
 
     private fun icon(
         stroke: List<String> = emptyList(),

@@ -1,6 +1,9 @@
 package com.github.damontecres.wholphin.ui.components
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -12,6 +15,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.dp
+import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.filter.DiscoverSort
@@ -20,6 +25,7 @@ import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.data.flip
 import com.github.damontecres.wholphin.ui.data.getStringRes
+import com.github.damontecres.wholphin.ui.playback.theater.TheaterIcons
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
 
@@ -46,9 +52,14 @@ fun SortByButton(
                 onSortChange.invoke(current.flip())
             },
         ) {
-            Text(
-                text = current.toAnnotatedString(),
+            // Nova: a line arrow for the direction, like the rest of the toolbar's icons
+            Icon(
+                imageVector = if (current.direction == SortOrder.ASCENDING) TheaterIcons.ArrowUp else TheaterIcons.ArrowDown,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
             )
+            Spacer(Modifier.width(6.dp))
+            Text(text = stringResource(getStringRes(current.sort)))
         }
 
         DropdownMenu(

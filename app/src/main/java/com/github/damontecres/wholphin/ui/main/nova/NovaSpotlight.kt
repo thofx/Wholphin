@@ -267,7 +267,7 @@ fun NovaHomeContent(
                     Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .padding(start = 40.dp, end = 16.dp)
+                        .padding(start = NovaContentStart - 8.dp, end = 16.dp)
                         .onFocusChanged { if (it.hasFocus) inRows = true }
                         .onPreviewKeyEvent { event ->
                             // Up from the first row goes back to the spotlight (collapsed, so not found by focus search)
@@ -367,7 +367,7 @@ private fun SpotlightPane(
             modifier =
                 Modifier
                     .align(Alignment.BottomStart)
-                    .padding(start = 56.dp, bottom = 8.dp)
+                    .padding(start = NovaContentStart, bottom = 8.dp)
                     // Wide enough for an episode's details line; the overview keeps its own width
                     .widthIn(max = 720.dp),
         ) {

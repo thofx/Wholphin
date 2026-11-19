@@ -322,7 +322,8 @@ fun <T : CardGridItem> CardGrid(
                         horizontalArrangement = Arrangement.spacedBy(spacing),
                         verticalArrangement = Arrangement.spacedBy(spacing),
                         state = gridState,
-                        contentPadding = PaddingValues(vertical = 16.dp),
+                        // Nova: start on the line of the page title and the toolbar
+                        contentPadding = PaddingValues(start = 8.dp, top = 16.dp, bottom = 16.dp),
                         modifier =
                             Modifier
                                 .fillMaxSize()

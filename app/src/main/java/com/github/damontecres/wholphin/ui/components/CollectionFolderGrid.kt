@@ -44,6 +44,7 @@ import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.GridItemDetails
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
+import com.github.damontecres.wholphin.ui.playback.theater.TheaterIcons
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -317,7 +318,8 @@ fun CollectionFolderHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
                     Modifier
-                        .padding(start = 16.dp, end = endPadding)
+                        // Nova: the toolbar starts on the grid's edge, under the page title
+                        .padding(start = 8.dp, end = endPadding)
                         .fillMaxWidth(),
             ) {
                 Row(
@@ -349,10 +351,12 @@ fun CollectionFolderHeader(
                             onShow = onShowFilterDropdown,
                         )
                     }
-                    ExpandableFaButton(
+                    // Nova: the toolbar uses the fork's line icons, one style for all its buttons
+                    ExpandablePlayButton(
                         title = R.string.view_options,
-                        iconStringRes = R.string.fa_sliders,
-                        onClick = onClickShowViewOptions,
+                        resume = Duration.ZERO,
+                        icon = TheaterIcons.Sliders,
+                        onClick = { onClickShowViewOptions() },
                         modifier =
                             Modifier.ifElse(
                                 sortOptions.isEmpty() && filterOptions.isEmpty(),
@@ -368,10 +372,11 @@ fun CollectionFolderHeader(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier,
                 ) {
-                    ExpandableFaButton(
+                    ExpandablePlayButton(
                         title = R.string.sort_by_random,
-                        iconStringRes = R.string.fa_dice,
-                        onClick = onClickRandom,
+                        resume = Duration.ZERO,
+                        icon = TheaterIcons.Dice,
+                        onClick = { onClickRandom() },
                         modifier = Modifier.focusRequester(randomButtonFocusRequester),
                         enabled = listIsNotEmpty,
                     )
@@ -380,13 +385,14 @@ fun CollectionFolderHeader(
                         ExpandablePlayButton(
                             title = R.string.play,
                             resume = Duration.ZERO,
-                            icon = Icons.Default.PlayArrow,
+                            icon = TheaterIcons.Play,
                             onClick = { onClickPlayAll.invoke(false) },
                             enabled = listIsNotEmpty,
                         )
-                        ExpandableFaButton(
+                        ExpandablePlayButton(
                             title = R.string.shuffle,
-                            iconStringRes = R.string.fa_shuffle,
+                            resume = Duration.ZERO,
+                            icon = TheaterIcons.Shuffle,
                             onClick = { onClickPlayAll.invoke(true) },
                             enabled = listIsNotEmpty,
                         )

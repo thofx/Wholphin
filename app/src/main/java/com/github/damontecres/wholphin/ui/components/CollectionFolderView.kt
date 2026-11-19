@@ -61,6 +61,7 @@ import com.github.damontecres.wholphin.ui.detail.music.addToQueue
 import com.github.damontecres.wholphin.ui.equalsNotNull
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.main.nova.NovaDimBackdrop
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.playback.scale
 import com.github.damontecres.wholphin.ui.rememberInt
@@ -1048,6 +1049,8 @@ fun CollectionFolderViewContent(
                         LaunchedEffect(focusedItem) {
                             focusedItem?.let(viewActions::updateBackdrop)
                         }
+                        // Nova: dim it, a grid over a full color backdrop is busy
+                        NovaDimBackdrop()
                     }
                     CollectionFolderHeader(
                         listIsNotEmpty = state.items.successValue?.isNotEmpty() == true,

@@ -1,5 +1,7 @@
 package com.github.damontecres.wholphin.ui.main.nova
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -27,9 +29,12 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
@@ -80,6 +85,25 @@ const val NOVA_HOME_ENABLED = true
 
 /** The top bar, provided by [NovaHomeFrame] so [NovaHomeContent] can lay it out and hide it */
 internal val LocalNovaTopBar = staticCompositionLocalOf<(@Composable (Modifier, FocusRequester) -> Unit)?> { null }
+
+/** How much a page dims the backdrop behind it (0 to 1); null outside a Nova page */
+internal val LocalNovaPageScrim = staticCompositionLocalOf<MutableFloatState?> { null }
+
+/**
+ * Dims the backdrop behind the current page while composed: busy pages (a library grid) over a full color backdrop
+ * are hard to read. No effect outside a Nova page.
+ */
+@Composable
+fun NovaDimBackdrop(amount: Float = .78f) {
+    val scrim = LocalNovaPageScrim.current ?: return
+    DisposableEffect(scrim, amount) {
+        scrim.floatValue = amount
+        onDispose { scrim.floatValue = 0f }
+    }
+}
+
+/** Left edge of page content, the same line as the home top bar's first icon */
+internal val NovaContentStart = 48.dp
 
 /** Title of the current page (a library, favorites) shown before its tabs; null when it has none */
 internal val LocalNovaPageTitle = staticCompositionLocalOf<String?> { null }
@@ -142,8 +166,17 @@ private fun NovaPageFrame(
                 }
             }
         }
-    CompositionLocalProvider(LocalNovaPageTitle provides title) {
+    val scrim = remember { mutableFloatStateOf(0f) }
+    val scrimAlpha by animateFloatAsState(scrim.floatValue, tween(400), label = "page_scrim")
+    val background = MaterialTheme.colorScheme.background
+    CompositionLocalProvider(LocalNovaPageTitle provides title, LocalNovaPageScrim provides scrim) {
         Box(modifier = modifier.fillMaxSize()) {
+            // Full screen, so it dims the backdrop evenly, also behind the content's padding
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .drawBehind { drawRect(background.copy(alpha = scrimAlpha)) },
+            )
             DestinationContent(
                 destination = destination,
                 preferences = preferences,
@@ -151,7 +184,8 @@ private fun NovaPageFrame(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .padding(start = 32.dp, end = 16.dp),
+                        // Content's own start padding (8dp for rows and tabs) brings it to NovaContentStart
+                        .padding(start = NovaContentStart - 8.dp, end = 16.dp),
             )
             if (preferences.appPreferences.interfacePreferences.showClock) {
                 TimeDisplay()
