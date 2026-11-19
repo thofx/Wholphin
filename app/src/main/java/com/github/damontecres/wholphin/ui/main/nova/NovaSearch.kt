@@ -35,7 +35,11 @@ import com.github.damontecres.wholphin.ui.main.HomePageCardContent
 import com.github.damontecres.wholphin.ui.playback.theater.TheaterIcons
 import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.jellyfin.sdk.api.client.ApiClient
@@ -46,16 +50,31 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import javax.inject.Inject
 
-/** Recent search queries, on this device only */
+/**
+ * Recent search queries, on this device only, kept per server and user: profiles on one TV (possibly protected by a
+ * PIN) do not see each other's searches.
+ */
 object RecentSearches {
     private const val PREFS_NAME = "nova_search"
-    private const val KEY = "recent"
     private const val MAX = 8
 
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface RecentSearchesEntryPoint {
+        fun serverRepository(): ServerRepository
+    }
+
+    /** The current user's key; null without a user, then nothing is read or kept */
+    private fun key(context: Context): String? =
+        EntryPointAccessors
+            .fromApplication(context.applicationContext, RecentSearchesEntryPoint::class.java)
+            .serverRepository()
+            .currentUser
+            ?.let { "recent_${it.serverId}_${it.id}" }
+
     fun get(context: Context): List<String> =
-        context
-            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getString(KEY, null)
+        key(context)
+            ?.let { context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(it, null) }
             ?.split('\n')
             ?.filter { it.isNotBlank() }
             .orEmpty()
@@ -79,11 +98,14 @@ object RecentSearches {
     private fun save(
         context: Context,
         list: List<String>,
-    ) = context
-        .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        .edit()
-        .putString(KEY, list.joinToString("\n"))
-        .apply()
+    ) {
+        val key = key(context) ?: return
+        context
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(key, list.joinToString("\n"))
+            .apply()
+    }
 }
 
 /** Top rated movies and shows the user has not watched, for the empty search page */
