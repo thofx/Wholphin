@@ -2,13 +2,20 @@ package com.github.damontecres.wholphin.ui.playback.theater
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +30,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -31,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -42,11 +51,15 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
@@ -54,6 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.tv.material3.Icon
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
@@ -171,6 +185,10 @@ fun TheaterOverlay(
                 modifier = Modifier.fillMaxSize(),
             )
         }
+        // D-pad seek feedback on the side of the seek, shown on the first press whatever the overlay is doing.
+        // Below the overlay, so the seek preview thumbnail stays on top of it.
+        SeekHud(state = state, durationMs = durationMs, modifier = Modifier.fillMaxSize())
+
         // Scrims
         AnimatedVisibility(
             visible = state.visible && !panelOpen,
@@ -517,6 +535,132 @@ private fun SpecTags(playback: PlaybackState) {
         if (video?.is4k == true) SpecTag("4K")
         if (video?.hdr == true) SpecTag("HDR", borderColor = TheaterColors.Premium)
         if (transcoding) SpecTag(stringResource(R.string.transcoding), filled = TheaterColors.Transcoding)
+    }
+}
+
+/** How long the seek feedback stays after the last press has been applied */
+private const val SEEK_HUD_LINGER_MS = 600L
+
+private val HudTextShadow = Shadow(Color.Black.copy(alpha = .6f), blurRadius = 10f)
+
+/**
+ * Feedback for d-pad seeks: a shaded half circle on the side of the seek (left back, right forward) with
+ * chevrons flowing outward, the total offset and the resulting position. Each press pulses it. The overlay's
+ * progress bar fades in and only shows once visible, so a quick press could go unnoticed; this shows at once.
+ */
+@Composable
+private fun SeekHud(
+    state: TheaterState,
+    durationMs: Long,
+    modifier: Modifier = Modifier,
+) {
+    val target = state.seekTargetMs
+    var shown by remember { mutableStateOf(false) }
+    // Kept while fading out, after the seek is applied and the target cleared
+    var deltaMs by remember { mutableLongStateOf(0L) }
+    var positionMs by remember { mutableLongStateOf(0L) }
+    var presses by remember { mutableIntStateOf(0) }
+    LaunchedEffect(target) {
+        if (target != null) {
+            deltaMs = target - state.seekStartMs
+            positionMs = target
+            shown = true
+            presses++
+        } else {
+            delay(SEEK_HUD_LINGER_MS)
+            shown = false
+        }
+    }
+    val forward = deltaMs >= 0
+    AnimatedVisibility(
+        visible = shown,
+        enter = fadeIn(tween(100)),
+        exit = fadeOut(tween(300)),
+        modifier = modifier,
+    ) {
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val radius = maxHeight * .3f
+            // A small outward pulse on each press
+            val pulse = remember { Animatable(1f) }
+            LaunchedEffect(presses) {
+                pulse.animateTo(1.06f, tween(90))
+                pulse.animateTo(1f, tween(220))
+            }
+            Canvas(Modifier.fillMaxSize()) {
+                val r = radius.toPx() * pulse.value
+                val center = Offset(if (forward) size.width else 0f, size.height / 2)
+                drawCircle(
+                    brush =
+                        // Dark, so it shows on bright pictures too and keeps the white text readable
+                        Brush.radialGradient(
+                            0f to Color.Black.copy(alpha = .55f),
+                            .75f to Color.Black.copy(alpha = .35f),
+                            1f to Color.Transparent,
+                            center = center,
+                            radius = r,
+                        ),
+                    radius = r,
+                    center = center,
+                )
+            }
+            // Content centered in the visible half circle
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                modifier =
+                    Modifier
+                        .align(if (forward) Alignment.CenterEnd else Alignment.CenterStart)
+                        .width(radius),
+            ) {
+                FlowingChevrons(backward = !forward)
+                Text(
+                    text = formatOffset(deltaMs),
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TheaterColors.Text,
+                    style = TextStyle(shadow = HudTextShadow),
+                )
+                Text(
+                    text =
+                        if (durationMs > 0) {
+                            "${formatTimecode(positionMs)} / ${formatTimecode(durationMs)}"
+                        } else {
+                            formatTimecode(positionMs)
+                        },
+                    fontSize = 14.sp,
+                    color = TheaterColors.TextSecondary,
+                    style = TextStyle(shadow = HudTextShadow),
+                )
+            }
+        }
+    }
+}
+
+/** Three chevrons lighting up one after the other, flowing outward (mirrored for a seek back) */
+@Composable
+private fun FlowingChevrons(backward: Boolean) {
+    val phase by rememberInfiniteTransition(label = "seek_chevrons").animateFloat(
+        initialValue = 0f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(tween(750, easing = LinearEasing)),
+        label = "seek_chevrons_phase",
+    )
+    Row(Modifier.graphicsLayer { scaleX = if (backward) -1f else 1f }) {
+        repeat(3) { i ->
+            Icon(
+                imageVector = TheaterIcons.Chevron,
+                contentDescription = null,
+                tint = TheaterColors.Text,
+                modifier =
+                    Modifier
+                        .size(26.dp)
+                        .graphicsLayer {
+                            // Brightest when the wave passes, dim otherwise
+                            val distance = kotlin.math.abs(phase - i - .5f).coerceAtMost(1.5f)
+                            alpha = .3f + .7f * (1f - distance / 1.5f)
+                        },
+            )
+        }
     }
 }
 
