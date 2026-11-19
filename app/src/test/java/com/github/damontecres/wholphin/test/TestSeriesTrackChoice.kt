@@ -531,4 +531,34 @@ class TestSeriesTrackChoice {
                     assertTrue(result.reason is StreamChoiceReason.Season)
                 }
         }
+
+    @Test
+    fun `Test unidentified audio is not chosen automatically`() =
+        runTest {
+            val prefs = UserPreferences(AppPreferences.getDefaultInstance(), null)
+            // AV3A is the default track but the server reports it without a codec
+            val candidates =
+                listOf(
+                    audio(1, "zho", default = true).copy(codec = null),
+                    audio(2, "zho").copy(codec = "eac3"),
+                    audio(4, "zho").copy(codec = "aac"),
+                )
+            val automatic =
+                streamChoiceService.chooseAudioStream(
+                    candidates = candidates,
+                    itemPlayback = null,
+                    stc = emptyList(),
+                    prefs = prefs,
+                )
+            assertEquals(2, automatic.stream!!.index)
+
+            val explicit =
+                streamChoiceService.chooseAudioStream(
+                    candidates = candidates,
+                    itemPlayback = ItemPlayback(userId = user.rowId, itemId = UUID.randomUUID(), audioIndex = 1),
+                    stc = emptyList(),
+                    prefs = prefs,
+                )
+            assertEquals(1, explicit.stream!!.index)
+        }
 }

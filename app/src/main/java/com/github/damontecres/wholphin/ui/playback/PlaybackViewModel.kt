@@ -27,6 +27,7 @@ import androidx.media3.session.MediaSession
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.size.Size
+import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ItemPlaybackRepository
 import com.github.damontecres.wholphin.data.ServerRepository
@@ -646,6 +647,7 @@ class PlaybackViewModel
             enableDirectPlay: Boolean = !this.forceTranscoding,
             enableDirectStream: Boolean = !this.forceTranscoding,
             maxBitrate: Long = this.state.value.maxBitrate,
+            allowAudioStreamCopy: Boolean = enableDirectStream,
         ): Unit =
             withContext(WholphinDispatchers.IO) {
                 val itemId = item.id
@@ -698,7 +700,7 @@ class PlaybackViewModel
                                 enableDirectPlay = enableDirectPlay,
                                 enableDirectStream = enableDirectStream,
                                 allowVideoStreamCopy = enableDirectStream,
-                                allowAudioStreamCopy = enableDirectStream,
+                                allowAudioStreamCopy = allowAudioStreamCopy,
                                 enableTranscoding = true,
                                 autoOpenLiveStream = true,
                             ),
@@ -878,16 +880,67 @@ class PlaybackViewModel
                             player.prepare()
                             player.play()
                         }
-                        val onFailure: () -> Unit = {
+                        val onFailure: (TrackSelectionResult) -> Unit = { result ->
+                            val audioStream =
+                                source.mediaStreams?.firstOrNull { it.type == MediaStreamType.AUDIO && it.index == audioIndex }
+                            // The server could not identify this audio (e.g. AV3A): no player decodes it and the
+                            // server cannot transcode it, so switch to a playable track instead of asking the server
+                            // ponytail: first default/playable track; use StreamChoiceService if language matters
+                            val replacementAudio =
+                                if (!result.audioSelected && audioStream != null && audioStream.codec == null) {
+                                    source.mediaStreams
+                                        .orEmpty()
+                                        .filter { it.type == MediaStreamType.AUDIO && it.codec != null }
+                                        .let { streams -> streams.firstOrNull { it.isDefault } ?: streams.firstOrNull() }
+                                } else {
+                                    null
+                                }
                             if (player is VlcPlayer && externalSubtitle != null) {
                                 // VlcPlayer reports the external subtitle in a later tracks update
                                 trackChangeListener?.let { player.addListener(it) }
                             } else if (transcodeType != PlayMethod.DIRECT_PLAY) {
                                 // Already transcoding/direct streaming, retrying would give the same result and loop forever
                                 Timber.w("Failed to select tracks during %s, not retrying", transcodeType)
+                            } else if (audioStream != null && replacementAudio != null) {
+                                Timber.w("Audio %s cannot be played, switching to %s", audioStream.index, replacementAudio.index)
+                                viewModelScope.launchIO {
+                                    showToast(
+                                        context,
+                                        context.getString(
+                                            R.string.nova_audio_track_unplayable,
+                                            audioStream.displayTitle ?: "#${audioStream.index}",
+                                            replacementAudio.displayTitle ?: "#${replacementAudio.index}",
+                                        ),
+                                        Toast.LENGTH_LONG,
+                                    )
+                                    _state.update {
+                                        it.copy(currentPlayback = it.currentPlayback?.copy(audioIndex = replacementAudio.index))
+                                    }
+                                    changeStreams(
+                                        item = item,
+                                        sourceId = sourceId,
+                                        audioIndex = replacementAudio.index,
+                                        subtitleIndex = subtitleIndex,
+                                        positionMs = positionMs,
+                                    )
+                                }
                             } else if (vlcFallbackEnabled && player !is VlcPlayer) {
                                 viewModelScope.launchIO {
                                     retryWithVlc(item, sourceId, audioIndex, subtitleIndex, positionMs)
+                                }
+                            } else if (!result.audioSelected) {
+                                // The player cannot decode this audio, a remux would not help: transcode only the audio
+                                viewModelScope.launchIO {
+                                    changeStreams(
+                                        item = item,
+                                        sourceId = sourceId,
+                                        audioIndex = audioIndex,
+                                        subtitleIndex = subtitleIndex,
+                                        positionMs = positionMs,
+                                        enableDirectPlay = false,
+                                        enableDirectStream = true,
+                                        allowAudioStreamCopy = false,
+                                    )
                                 }
                             } else {
                                 viewModelScope.launchIO {

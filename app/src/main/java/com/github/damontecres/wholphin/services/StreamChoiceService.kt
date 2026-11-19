@@ -155,15 +155,18 @@ class StreamChoiceService
             itemPlayback: ItemPlayback?,
             stc: List<SeriesTrackChoice>,
             prefs: UserPreferences,
-        ): StreamChoiceResult =
-            if (itemPlayback?.audioIndexEnabled == true) {
+        ): StreamChoiceResult {
+            // A stream the server could not identify (e.g. AV3A audio) can be neither direct played nor transcoded,
+            // so never pick it automatically. An explicit choice for the item is still honored.
+            val playable = candidates.filter { it.codec != null }.ifEmpty { candidates }
+            return if (itemPlayback?.audioIndexEnabled == true) {
                 candidates.firstOrNull { it.index == itemPlayback.audioIndex } with
                     StreamChoiceReason.Item(
                         itemPlayback,
                     )
             } else if (stc.isNotEmpty()) {
                 val first = stc.first()
-                val result = scoreStreams(candidates, first)
+                val result = scoreStreams(playable, first)
                 if (result == null) {
                     null with StreamChoiceReason.from(first)
                 } else if (result.isEmpty() && stc.size > 1) {
@@ -183,17 +186,18 @@ class StreamChoiceService
                 val stream =
                     if (audioLanguage.isNotNullOrBlank()) {
                         val sorted =
-                            candidates.sortedWith(compareBy<MediaStream> { it.language }.thenByDescending { it.channels })
+                            playable.sortedWith(compareBy<MediaStream> { it.language }.thenByDescending { it.channels })
                         sorted.firstOrNull { it.language == audioLanguage && it.isDefault }
                             ?: sorted.firstOrNull { it.language == audioLanguage }
                             ?: sorted.firstOrNull { it.isDefault }
                             ?: sorted.firstOrNull()
                     } else {
-                        candidates.firstOrNull { it.isDefault }
-                            ?: candidates.firstOrNull()
+                        playable.firstOrNull { it.isDefault }
+                            ?: playable.firstOrNull()
                     }
                 stream with StreamChoiceReason.UserPreferences
             }
+        }
 
         /**
          * Returns the subtitle stream that should play

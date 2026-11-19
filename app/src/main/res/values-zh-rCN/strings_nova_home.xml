@@ -16,4 +16,5 @@
     <string name="nova_recent_searches">最近搜索</string>
     <string name="nova_top_rated">高分推荐</string>
     <string name="nova_clear">清除</string>
+    <string name="nova_audio_track_unplayable">音轨“%1$s”无法播放，已切换到“%2$s”</string>
 </resources>
