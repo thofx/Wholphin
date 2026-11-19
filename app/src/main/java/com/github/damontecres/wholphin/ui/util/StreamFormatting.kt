@@ -153,12 +153,13 @@ object StreamFormatting {
         val name =
             buildList {
                 languageName(stream.language)?.let(::add)
+                // Unknown parts (e.g. an unrecognized codec like AV3A) are left out rather than shown as "null"
                 if (stream.type == MediaStreamType.AUDIO) {
-                    add(formatAudioCodec(resources, stream.codec, stream.profile))
-                    add(stream.channelLayout)
+                    formatAudioCodec(resources, stream.codec, stream.profile)?.let(::add)
+                    stream.channelLayout?.let(::add)
                 } else if (stream.type == MediaStreamType.SUBTITLE) {
                     "SDH".takeIf { stream.isHearingImpaired }?.let(::add)
-                    add(formatSubtitleCodec(stream.codec))
+                    formatSubtitleCodec(stream.codec)?.let(::add)
                 }
             }.joinToString(" ")
         if (includeFlags) {

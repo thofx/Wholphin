@@ -538,6 +538,9 @@ private fun SpecTags(playback: PlaybackState) {
     }
 }
 
+/** The channel layout ending a generated audio title: "stereo", "mono", "5.1", "7.1.2" */
+private val ChannelLayoutSuffix = Regex("""\s+(stereo|mono|\d(\.\d){1,2})$""", RegexOption.IGNORE_CASE)
+
 /** How long the seek feedback stays after the last press has been applied */
 private const val SEEK_HUD_LINGER_MS = 600L
 
@@ -589,9 +592,9 @@ private fun SeekHud(
             Canvas(Modifier.fillMaxSize()) {
                 val r = radius.toPx() * pulse.value
                 val center = Offset(if (forward) size.width else 0f, size.height / 2)
+                // Dark, so it shows on bright pictures too and keeps the white text readable
                 drawCircle(
                     brush =
-                        // Dark, so it shows on bright pictures too and keeps the white text readable
                         Brush.radialGradient(
                             0f to Color.Black.copy(alpha = .55f),
                             .75f to Color.Black.copy(alpha = .35f),
@@ -822,13 +825,15 @@ private fun ButtonRow(
                     ?: stringResource(R.string.none)
             }
         }
-    // The generated title starts with the language, which the file's own title (e.g. "AAC2.0,普通话") may cut off;
-    // the flags ("(Default)") are left out to fit the button
+    // The generated title starts with the language, which the file's own title (e.g. "AAC2.0,普通话") may cut off.
+    // To fit the button (all buttons have the same width): no flags ("(Default)") and no channel layout, so
+    // "中文 AAC"; the audio panel has the full title.
     val audioValue =
         settings.audioStreams
             .firstOrNull { it.index == settings.audioIndex }
             ?.displayTitle
             ?.substringBefore(" (")
+            ?.replace(ChannelLayoutSuffix, "")
     val currentItem = playback.currentPlayback?.item
 
     Row(
@@ -871,8 +876,6 @@ private fun ButtonRow(
                     label = stringResource(R.string.audio),
                     value = audioValue,
                     onClick = { state.openPanel(TheaterPanel.AUDIO) },
-                    // Language, codec and channels ("中文 AAC stereo") need more room than the other values
-                    width = 208.dp,
                     modifier =
                         Modifier
                             .focusRequester(requesters.getValue(TheaterPanel.AUDIO)),

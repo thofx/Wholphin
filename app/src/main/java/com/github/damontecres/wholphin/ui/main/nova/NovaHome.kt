@@ -405,7 +405,7 @@ private fun TopBarIcon(
     }
 }
 
-/** Pill buttons of the Nova home: white with dark content when focused */
+/** Pill buttons of the Nova home, in the shared button style (see [TheaterColors.Focused]) */
 @Composable
 internal fun novaPillColors(
     containerColor: Color = Color.Transparent,
@@ -413,8 +413,8 @@ internal fun novaPillColors(
 ) = ClickableSurfaceDefaults.colors(
     containerColor = containerColor,
     contentColor = contentColor,
-    focusedContainerColor = TheaterColors.Text,
-    focusedContentColor = TheaterColors.Dark,
+    focusedContainerColor = TheaterColors.Focused,
+    focusedContentColor = TheaterColors.OnFocused,
 )
 
 /**
@@ -458,7 +458,7 @@ fun NovaFavoritesEmpty(
         Surface(
             onClick = onGoHome,
             shape = ClickableSurfaceDefaults.shape(CircleShape),
-            colors = novaPillColors(containerColor = Color.White.copy(alpha = .16f)),
+            colors = novaPillColors(containerColor = TheaterColors.Glass),
             scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
             modifier =
                 Modifier

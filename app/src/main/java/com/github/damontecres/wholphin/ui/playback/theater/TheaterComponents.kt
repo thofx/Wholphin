@@ -44,7 +44,6 @@ object TheaterColors {
     val TextSecondary = Color(0xFFC3C8D0)
     val Dark = Color(0xFF0B0D10)
     val PanelBackground = Color(0xF20E1014)
-    val Button = Color(0x1FFFFFFF)
     val Track = Color(0x38FFFFFF)
 
     /** Fixed status color for the transcoding tag, independent of the theme */
@@ -56,6 +55,16 @@ object TheaterColors {
     /** Theme accent, same color the upstream seek bar uses */
     val accent: Color
         @Composable get() = MaterialTheme.colorScheme.border
+
+    /** One button style everywhere: focused is the theme's light color with dark content, like upstream buttons */
+    val Focused: Color
+        @Composable get() = MaterialTheme.colorScheme.onSurface
+    val OnFocused: Color
+        @Composable get() = MaterialTheme.colorScheme.inverseOnSurface
+
+    /** Unfocused buttons: a light glass that reads on pictures and flat backgrounds alike */
+    val Glass: Color
+        @Composable get() = MaterialTheme.colorScheme.onSurface.copy(alpha = .14f)
 }
 
 /** Height shared by every button in the button row, so buttons with one or two lines line up */
@@ -96,10 +105,10 @@ fun TheaterButton(
         shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(10.dp)),
         colors =
             ClickableSurfaceDefaults.colors(
-                containerColor = TheaterColors.Button,
+                containerColor = TheaterColors.Glass,
                 contentColor = TheaterColors.Text,
-                focusedContainerColor = TheaterColors.Text,
-                focusedContentColor = TheaterColors.Dark,
+                focusedContainerColor = TheaterColors.Focused,
+                focusedContentColor = TheaterColors.OnFocused,
             ),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1.04f),
     ) {
@@ -181,8 +190,8 @@ fun PanelItem(
             ClickableSurfaceDefaults.colors(
                 containerColor = Color.Transparent,
                 contentColor = TheaterColors.Text,
-                focusedContainerColor = TheaterColors.Text,
-                focusedContentColor = TheaterColors.Dark,
+                focusedContainerColor = TheaterColors.Focused,
+                focusedContentColor = TheaterColors.OnFocused,
                 disabledContainerColor = Color.Transparent,
                 disabledContentColor = TheaterColors.TextSecondary.copy(alpha = .5f),
             ),

@@ -54,7 +54,8 @@ fun Button(
         ),
     colors: ClickableSurfaceColors =
         ClickableSurfaceDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+            // Nova: the shared light glass for unfocused buttons (was surfaceVariant at 80%)
+            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f),
             contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
             focusedContainerColor = MaterialTheme.colorScheme.onSurface,
             focusedContentColor = MaterialTheme.colorScheme.inverseOnSurface,

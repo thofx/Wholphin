@@ -533,11 +533,7 @@ private fun PrimaryButton(
         onClick = onClick,
         onLongClick = onLongClick,
         shape = ClickableSurfaceDefaults.shape(CircleShape),
-        colors = novaPillColors(containerColor = Color.White.copy(alpha = .16f)),
-        border =
-            ClickableSurfaceDefaults.border(
-                focusedBorder = Border(BorderStroke(2.dp, TheaterColors.accent), inset = (-3).dp, shape = CircleShape),
-            ),
+        colors = novaPillColors(containerColor = TheaterColors.Glass),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
         modifier = modifier,
     ) {
