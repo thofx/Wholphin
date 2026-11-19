@@ -1,23 +1,37 @@
 package com.github.damontecres.wholphin.ui.main.nova
 
 import android.content.res.Resources
-import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.tv.material3.ClickableSurfaceDefaults
+import androidx.tv.material3.Icon
+import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
+import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.components.StreamLabel
 import com.github.damontecres.wholphin.ui.formatBitrate
+import com.github.damontecres.wholphin.ui.playback.theater.TheaterColors
+import com.github.damontecres.wholphin.ui.playback.theater.TheaterIcons
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatAudioCodec
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatSubtitleCodec
 import com.github.damontecres.wholphin.util.languageName
@@ -26,34 +40,23 @@ import org.jellyfin.sdk.model.api.MediaStream
 /** Values longer than this take a whole row of the grid (paths, ids) */
 private const val LONG_VALUE = 22
 
-/**
- * A media info section of the details panel: an optional one line summary, then label / value pairs in two columns
- */
+/** Label / value pairs in two columns; long values on their own row */
 @Composable
-fun NovaInfoSection(
-    title: String,
+fun NovaInfoGrid(
     pairs: List<Pair<String, String>>,
     modifier: Modifier = Modifier,
-    headline: String? = null,
 ) {
-    val muted = MaterialTheme.colorScheme.onSurface.copy(alpha = .55f)
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = modifier.padding(vertical = 6.dp)) {
-        Text(text = title, style = MaterialTheme.typography.titleMedium, color = muted)
-        if (headline != null) {
-            Text(text = headline, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+    val muted = LocalContentColor.current.copy(alpha = .6f)
+    val rows = mutableListOf<List<Pair<String, String>>>()
+    pairs.forEach { pair ->
+        val last = rows.lastOrNull()
+        if (pair.second.length <= LONG_VALUE && last != null && last.size == 1 && last[0].second.length <= LONG_VALUE) {
+            rows[rows.lastIndex] = last + pair
+        } else {
+            rows.add(listOf(pair))
         }
-        // Short values two per row, long ones on their own
-        val rows = mutableListOf<List<Pair<String, String>>>()
-        pairs.forEach { pair ->
-            val last = rows.lastOrNull()
-            if (pair.second.length > LONG_VALUE) {
-                rows.add(listOf(pair))
-            } else if (last != null && last.size == 1 && last[0].second.length <= LONG_VALUE) {
-                rows[rows.lastIndex] = last + pair
-            } else {
-                rows.add(listOf(pair))
-            }
-        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = modifier) {
         rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.fillMaxWidth()) {
                 row.forEach { (label, value) ->
@@ -67,10 +70,93 @@ fun NovaInfoSection(
                         Text(text = value, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
-                if (row.size == 1 && row[0].second.length <= LONG_VALUE) {
-                    androidx.compose.foundation.layout
-                        .Spacer(Modifier.weight(1f))
+                if (row.size == 1 && row[0].second.length <= LONG_VALUE) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/** A one line summary of the general file information: its short values */
+fun generalSummary(pairs: List<Pair<String, String>>): String =
+    pairs
+        .map { it.second }
+        .filter { it.length <= LONG_VALUE }
+        .joinToString(" · ")
+
+/**
+ * A media info entry of the details panel (the file, a video, audio or subtitle track): a summary line with its
+ * flags and an optional muted line, expanding into all its fields when clicked.
+ */
+@Composable
+fun NovaExpandableCard(
+    title: String,
+    primary: String,
+    details: List<Pair<String, String>>,
+    modifier: Modifier = Modifier,
+    flags: List<String> = emptyList(),
+    secondary: String? = null,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Surface(
+        onClick = { expanded = !expanded },
+        shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(12.dp)),
+        colors =
+            ClickableSurfaceDefaults.colors(
+                containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = .06f),
+                contentColor = TheaterColors.Text,
+                focusedContainerColor = TheaterColors.Focused,
+                focusedContentColor = TheaterColors.OnFocused,
+            ),
+        scale = ClickableSurfaceDefaults.scale(focusedScale = 1.01f),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Title, summary and flags take the room; the chevron stays at the end
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = LocalContentColor.current.copy(alpha = .6f),
+                    )
+                    Text(
+                        text = primary,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    flags.forEach { StreamLabel(it) }
                 }
+                Icon(
+                    imageVector = TheaterIcons.Chevron,
+                    contentDescription = null,
+                    modifier =
+                        Modifier
+                            .padding(start = 8.dp)
+                            .size(18.dp)
+                            .rotate(if (expanded) 270f else 90f),
+                )
+            }
+            if (!secondary.isNullOrBlank()) {
+                Text(
+                    text = secondary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = LocalContentColor.current.copy(alpha = .65f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            AnimatedVisibility(expanded) {
+                NovaInfoGrid(details, Modifier.padding(top = 8.dp))
             }
         }
     }
@@ -85,42 +171,6 @@ fun videoHeadline(stream: MediaStream): String =
         stream.realFrameRate?.let { "%.3g fps".format(it) },
         stream.bitRate?.let(::formatBitrate),
     ).joinToString(" · ")
-
-/** One audio or subtitle track: a summary line with its flags, then the rest in a muted line */
-@Composable
-fun NovaStreamCard(
-    title: String,
-    primary: String,
-    flags: List<String>,
-    secondary: String?,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = .06f), RoundedCornerShape(12.dp))
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .55f),
-            )
-            Text(text = primary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            flags.forEach { StreamLabel(it) }
-        }
-        if (!secondary.isNullOrBlank()) {
-            Text(
-                text = secondary,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
-            )
-        }
-    }
-}
 
 private fun MediaStream.flags(): List<String> =
     listOfNotNull(

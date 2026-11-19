@@ -1,6 +1,7 @@
 package com.github.damontecres.wholphin.ui.data
 
 import android.content.res.Resources
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -31,13 +32,14 @@ import com.github.damontecres.wholphin.ui.formatBitrate
 import com.github.damontecres.wholphin.ui.formatBytes
 import com.github.damontecres.wholphin.ui.formatDate
 import com.github.damontecres.wholphin.ui.formatDuration
+import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
-import com.github.damontecres.wholphin.ui.main.nova.NovaInfoSection
+import com.github.damontecres.wholphin.ui.main.nova.NovaExpandableCard
 import com.github.damontecres.wholphin.ui.main.nova.NovaSheet
-import com.github.damontecres.wholphin.ui.main.nova.NovaStreamCard
 import com.github.damontecres.wholphin.ui.main.nova.audioCard
+import com.github.damontecres.wholphin.ui.main.nova.generalSummary
 import com.github.damontecres.wholphin.ui.main.nova.subtitleCard
 import com.github.damontecres.wholphin.ui.main.nova.videoHeadline
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatAudioCodec
@@ -108,7 +110,11 @@ fun ItemDetailsDialog(
         }
     container {
         item {
-            Column(verticalArrangement = Arrangement.spacedBy(if (NOVA_HOME_ENABLED) 18.dp else 16.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(if (NOVA_HOME_ENABLED) 18.dp else 16.dp),
+                // Nova: the panel moves focus through its entries; the header is the first stop
+                modifier = Modifier.ifElse(NOVA_HOME_ENABLED, Modifier.focusable()),
+            ) {
                 Text(
                     text = info.title,
                     style = if (NOVA_HOME_ENABLED) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineSmall,
@@ -206,10 +212,10 @@ fun ItemDetailsDialog(
                 if (NOVA_HOME_ENABLED) {
                     // Nova: video as a summary line and a two column grid, one card per audio / subtitle track
                     itemsIndexed(videoStreams) { index, stream ->
-                        NovaInfoSection(
+                        NovaExpandableCard(
                             title = titleIndex(videoLabel, index, videoStreams.size),
-                            headline = remember { videoHeadline(stream) },
-                            pairs =
+                            primary = remember { videoHeadline(stream) },
+                            details =
                                 remember {
                                     buildVideoStreamInfo(resources, stream) + buildVideoStreamInfoAdditional(resources, stream)
                                 },
@@ -226,11 +232,23 @@ fun ItemDetailsDialog(
                                 )
                             }
                             itemsIndexed(streams) { index, stream ->
+                                val isAudio = label == audioLabel
                                 val (primary, flags, secondary) =
-                                    remember {
-                                        if (label == audioLabel) audioCard(resources, stream) else subtitleCard(stream)
-                                    }
-                                NovaStreamCard(title = "${index + 1}", primary = primary, flags = flags, secondary = secondary)
+                                    remember { if (isAudio) audioCard(resources, stream) else subtitleCard(stream) }
+                                NovaExpandableCard(
+                                    title = "${index + 1}",
+                                    primary = primary,
+                                    flags = flags,
+                                    secondary = secondary,
+                                    details =
+                                        remember {
+                                            if (isAudio) {
+                                                buildAudioStreamInfo(resources, stream)
+                                            } else {
+                                                buildSubtitleStreamInfo(resources, stream, showFilePath)
+                                            }
+                                        },
+                                )
                             }
                         }
                     }
@@ -312,7 +330,8 @@ private fun MediaInfoSection(
     additional: List<Pair<String, String>> = listOf(),
 ) {
     if (NOVA_HOME_ENABLED) {
-        NovaInfoSection(title = title, pairs = items + additional, modifier = modifier)
+        val pairs = items + additional
+        NovaExpandableCard(title = title, primary = generalSummary(pairs), details = pairs, modifier = modifier)
         return
     }
     Column(

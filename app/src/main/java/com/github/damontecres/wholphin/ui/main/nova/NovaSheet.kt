@@ -72,19 +72,8 @@ fun NovaSheet(
                             .width(width)
                             .fillMaxHeight()
                             .background(TheaterColors.PanelBackground)
-                            .focusRequester(focusRequester)
-                            .focusable()
-                            .onKeyEvent {
-                                if (it.type != KeyEventType.KeyDown) return@onKeyEvent false
-                                val delta =
-                                    when (it.key) {
-                                        Key.DirectionDown -> 200f
-                                        Key.DirectionUp -> -200f
-                                        else -> return@onKeyEvent false
-                                    }
-                                scope.launch { listState.animateScrollBy(delta) }
-                                true
-                            },
+                            // Up / down move focus through the entries; the list follows it
+                            .focusRequester(focusRequester),
                 )
             }
         }
