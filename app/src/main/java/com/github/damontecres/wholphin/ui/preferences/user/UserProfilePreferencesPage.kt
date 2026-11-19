@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -50,6 +51,8 @@ import com.github.damontecres.wholphin.preferences.SubtitleModePreference
 import com.github.damontecres.wholphin.preferences.UserProfileSettings
 import com.github.damontecres.wholphin.ui.components.BasicDialog
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
+import com.github.damontecres.wholphin.ui.main.nova.NovaSettingsLayout
 import com.github.damontecres.wholphin.ui.preferences.ChoicePreference
 import com.github.damontecres.wholphin.ui.preferences.ClickPreference
 import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
@@ -66,13 +69,18 @@ import timber.log.Timber
 @Composable
 fun UserProfilePreferencesPage(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier.background(MaterialTheme.colorScheme.background),
+        // Nova: the layout draws its own translucent background over the backdrop
+        modifier = modifier.ifElse(!NOVA_HOME_ENABLED, Modifier.background(MaterialTheme.colorScheme.background)),
     ) {
         UserProfilePreferencesContent(
-            Modifier
-                .fillMaxWidth(.4f)
-                .fillMaxHeight()
-                .align(Alignment.TopEnd),
+            if (NOVA_HOME_ENABLED) {
+                Modifier.fillMaxSize()
+            } else {
+                Modifier
+                    .fillMaxWidth(.4f)
+                    .fillMaxHeight()
+                    .align(Alignment.TopEnd)
+            },
         )
     }
 }
@@ -100,36 +108,20 @@ fun UserProfilePreferencesContent(
         visible = true
     }
 
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn() + slideInHorizontally { it / 2 },
-        exit = fadeOut() + slideOutHorizontally { it / 2 },
-        modifier = modifier,
-    ) {
-        LaunchedEffect(Unit) {
-            focusRequester.tryRequestFocus()
-        }
-        Column(
-            modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)),
+    // Nova: the group shown
+    var selectedGroup by rememberSaveable { mutableIntStateOf(0) }
+    val list: @Composable (Modifier) -> Unit = { listModifier ->
+        LazyColumn(
+            state = state,
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(if (NOVA_HOME_ENABLED) 4.dp else 0.dp),
+            contentPadding = PaddingValues(16.dp),
+            modifier = listModifier,
         ) {
-            Text(
-                text = stringResource(R.string.profile_specific_settings),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-            )
-            LazyColumn(
-                state = state,
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(0.dp),
-                contentPadding = PaddingValues(16.dp),
-                modifier = Modifier,
-            ) {
-                UserProfileSettings.Preferences.forEachIndexed { groupIndex, group ->
+            UserProfileSettings.Preferences.forEachIndexed { groupIndex, group ->
+                // Nova: one group at a time, its title is in the left column
+                if (NOVA_HOME_ENABLED && groupIndex != selectedGroup) return@forEachIndexed
+                if (!NOVA_HOME_ENABLED) {
                     item {
                         Text(
                             text = stringResource(group.title),
@@ -142,134 +134,171 @@ fun UserProfilePreferencesContent(
                                     .padding(top = 8.dp, bottom = 4.dp),
                         )
                     }
-                    val groupPreferences =
-                        group.preferences +
-                            group.conditionalPreferences
-                                .filter { it.condition.invoke(preferences) }
-                                .map { it.preferences }
-                                .flatten()
-                    groupPreferences.forEachIndexed { prefIndex, pref ->
-                        pref as AppPreference<JellyfinUserPreferences, Any>
-                        item {
-                            val interactionSource = remember { MutableInteractionSource() }
-                            val focused = interactionSource.collectIsFocusedAsState().value
+                }
+                val groupPreferences =
+                    group.preferences +
+                        group.conditionalPreferences
+                            .filter { it.condition.invoke(preferences) }
+                            .map { it.preferences }
+                            .flatten()
+                groupPreferences.forEachIndexed { prefIndex, pref ->
+                    pref as AppPreference<JellyfinUserPreferences, Any>
+                    item {
+                        val interactionSource = remember { MutableInteractionSource() }
+                        val focused = interactionSource.collectIsFocusedAsState().value
 
-                            val modifier =
-                                Modifier
-                                    .ifElse(
-                                        groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
-                                        Modifier.focusRequester(focusRequester),
-                                    ).onFocusChanged {
-                                        if (it.isFocused) focusedIndex = Pair(groupIndex, prefIndex)
-                                    }
-
-                            LaunchedEffect(focused) {
-                                if (focused) {
-                                    focusedIndex = Pair(groupIndex, prefIndex)
-                                    onFocus.invoke(groupIndex, prefIndex)
+                        val modifier =
+                            Modifier
+                                .ifElse(
+                                    groupIndex == focusedIndex.first && prefIndex == focusedIndex.second,
+                                    Modifier.focusRequester(focusRequester),
+                                ).onFocusChanged {
+                                    if (it.isFocused) focusedIndex = Pair(groupIndex, prefIndex)
                                 }
+
+                        LaunchedEffect(focused) {
+                            if (focused) {
+                                focusedIndex = Pair(groupIndex, prefIndex)
+                                onFocus.invoke(groupIndex, prefIndex)
                             }
-                            when (pref) {
-                                UserProfileSettings.PreferredAudioLang -> {
-                                    ClickPreference(
-                                        title = stringResource(pref.title),
-                                        onClick = { showPreferredLanguageDialog = true },
-                                        summary = audioLanguagePref.selected.displayString.getString(),
-                                        interactionSource = interactionSource,
-                                        modifier = modifier,
-                                    )
-                                }
+                        }
+                        when (pref) {
+                            UserProfileSettings.PreferredAudioLang -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = { showPreferredLanguageDialog = true },
+                                    summary = audioLanguagePref.selected.displayString.getString(),
+                                    interactionSource = interactionSource,
+                                    modifier = modifier,
+                                )
+                            }
 
-                                UserProfileSettings.PreferredSubtitleLang -> {
-                                    ClickPreference(
-                                        title = stringResource(pref.title),
-                                        onClick = { showPreferredLanguageDialog = false },
-                                        summary = subtitleLanguagePref.selected.displayString.getString(),
-                                        interactionSource = interactionSource,
-                                        modifier = modifier,
-                                    )
-                                }
+                            UserProfileSettings.PreferredSubtitleLang -> {
+                                ClickPreference(
+                                    title = stringResource(pref.title),
+                                    onClick = { showPreferredLanguageDialog = false },
+                                    summary = subtitleLanguagePref.selected.displayString.getString(),
+                                    interactionSource = interactionSource,
+                                    modifier = modifier,
+                                )
+                            }
 
-                                UserProfileSettings.SubtitleModePref -> {
-                                    pref as AppChoicePreference<JellyfinUserPreferences, SubtitleModePreference>
-                                    val value = preferences.subtitleMode
-                                    val values = stringArrayResource(pref.displayValues).toList()
-                                    val summary =
-                                        when (value) {
-                                            SubtitleModePreference.USE_USER_PROFILE -> {
-                                                val userMode = userDto?.configuration?.subtitleMode
-                                                if (userMode != null) {
-                                                    "${values[0]} - ${stringResource(userMode.stringRes)}"
-                                                } else {
-                                                    values[0]
-                                                }
-                                            }
-
-                                            else -> {
-                                                values[value.ordinal]
+                            UserProfileSettings.SubtitleModePref -> {
+                                pref as AppChoicePreference<JellyfinUserPreferences, SubtitleModePreference>
+                                val value = preferences.subtitleMode
+                                val values = stringArrayResource(pref.displayValues).toList()
+                                val summary =
+                                    when (value) {
+                                        SubtitleModePreference.USE_USER_PROFILE -> {
+                                            val userMode = userDto?.configuration?.subtitleMode
+                                            if (userMode != null) {
+                                                "${values[0]} - ${stringResource(userMode.stringRes)}"
+                                            } else {
+                                                values[0]
                                             }
                                         }
-                                    val selectedIndex =
-                                        remember(value) { pref.valueToIndex.invoke(value) }
-                                    ChoicePreference(
-                                        title = stringResource(pref.title),
-                                        summary = summary,
-                                        possibleValues = values,
-                                        selectedIndex = selectedIndex,
-                                        onValueChange = { index ->
-                                            viewModel.updatePreferences {
-                                                it.copy(subtitleMode = SubtitleModePreference.entries[index])
-                                            }
-                                        },
-                                        modifier = modifier,
-                                        interactionSource = interactionSource,
-                                        subtitleDisplay = { index, _ ->
-                                            val userMode = userDto?.configuration?.subtitleMode
-                                            if (index == 0 && userMode != null) {
-                                                {
-                                                    Text(stringResource(userMode.stringRes))
-                                                }
-                                            } else {
-                                                null
-                                            }
-                                        },
-                                    )
-                                }
 
-                                else -> {
-                                    val value = pref.getter.invoke(preferences)
-                                    ComposablePreference(
-                                        preference = pref,
-                                        value = value,
-                                        onNavigate = viewModel.navigationManager::navigateTo,
-                                        onValueChange = { newValue ->
-                                            val validation = pref.validate(preferences, newValue)
-                                            when (validation) {
-                                                is PreferenceValidation.Invalid -> {
-                                                    // TODO?
-                                                    Toast
-                                                        .makeText(
-                                                            context,
-                                                            validation.message,
-                                                            Toast.LENGTH_SHORT,
-                                                        ).show()
-                                                }
+                                        else -> {
+                                            values[value.ordinal]
+                                        }
+                                    }
+                                val selectedIndex =
+                                    remember(value) { pref.valueToIndex.invoke(value) }
+                                ChoicePreference(
+                                    title = stringResource(pref.title),
+                                    summary = summary,
+                                    possibleValues = values,
+                                    selectedIndex = selectedIndex,
+                                    onValueChange = { index ->
+                                        viewModel.updatePreferences {
+                                            it.copy(subtitleMode = SubtitleModePreference.entries[index])
+                                        }
+                                    },
+                                    modifier = modifier,
+                                    interactionSource = interactionSource,
+                                    subtitleDisplay = { index, _ ->
+                                        val userMode = userDto?.configuration?.subtitleMode
+                                        if (index == 0 && userMode != null) {
+                                            {
+                                                Text(stringResource(userMode.stringRes))
+                                            }
+                                        } else {
+                                            null
+                                        }
+                                    },
+                                )
+                            }
 
-                                                PreferenceValidation.Valid -> {
-                                                    viewModel.updatePreferences {
-                                                        pref.setter(preferences, newValue)
-                                                    }
+                            else -> {
+                                val value = pref.getter.invoke(preferences)
+                                ComposablePreference(
+                                    preference = pref,
+                                    value = value,
+                                    onNavigate = viewModel.navigationManager::navigateTo,
+                                    onValueChange = { newValue ->
+                                        val validation = pref.validate(preferences, newValue)
+                                        when (validation) {
+                                            is PreferenceValidation.Invalid -> {
+                                                // TODO?
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        validation.message,
+                                                        Toast.LENGTH_SHORT,
+                                                    ).show()
+                                            }
+
+                                            PreferenceValidation.Valid -> {
+                                                viewModel.updatePreferences {
+                                                    pref.setter(preferences, newValue)
                                                 }
                                             }
-                                        },
-                                        interactionSource = interactionSource,
-                                        modifier = modifier,
-                                    )
-                                }
+                                        }
+                                    },
+                                    interactionSource = interactionSource,
+                                    modifier = modifier,
+                                )
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+    if (NOVA_HOME_ENABLED) {
+        LaunchedEffect(Unit) { focusRequester.tryRequestFocus() }
+        NovaSettingsLayout(
+            title = stringResource(R.string.profile_specific_settings),
+            groups = UserProfileSettings.Preferences.map { stringResource(it.title) },
+            selectedGroup = selectedGroup,
+            onSelectGroup = { selectedGroup = it },
+            modifier = modifier,
+            list = list,
+        )
+    } else {
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn() + slideInHorizontally { it / 2 },
+            exit = fadeOut() + slideOutHorizontally { it / 2 },
+            modifier = modifier,
+        ) {
+            LaunchedEffect(Unit) {
+                focusRequester.tryRequestFocus()
+            }
+            Column(
+                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)),
+            ) {
+                Text(
+                    text = stringResource(R.string.profile_specific_settings),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                )
+                list(Modifier)
             }
         }
     }
