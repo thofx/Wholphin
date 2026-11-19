@@ -7,9 +7,11 @@ import androidx.media3.common.TrackSelectionParameters
 import androidx.media3.common.Tracks
 import com.github.damontecres.wholphin.data.model.TrackIndex
 import com.github.damontecres.wholphin.preferences.PlayerBackend
+import com.github.damontecres.wholphin.ui.playback.TrackSelected
 import com.github.damontecres.wholphin.ui.playback.TrackSelectionUtils
 import kotlinx.serialization.json.Json
 import org.jellyfin.sdk.model.api.MediaSourceInfo
+import org.jellyfin.sdk.model.api.MediaStreamType
 import org.junit.Assert
 import org.junit.Test
 import java.nio.file.Paths
@@ -795,6 +797,50 @@ class TestTrackSelection {
                     result.trackSelectionParameters.getSubtitleOverride()?.id,
                 )
             }
+    }
+
+    /**
+     * MP4 with AV3A + DDP5.1 + DDP2.0 + AAC2.0: the server reports AV3A without a codec and ExoPlayer
+     * does not expose it at all, so the audio tracks after it must not shift by one.
+     */
+    @Test
+    fun `test ExoPlayer hidden unknown audio`() {
+        val codecs = listOf("hevc", null, "eac3", "eac3", "aac", "mov_text")
+        val base =
+            TestTracks
+                .Builder()
+                .addVideo()
+                .addAudio(4)
+                .addSubtitle(1)
+                .buildMediaSourceInfo()
+        val source = base.copy(mediaStreams = base.mediaStreams!!.map { it.copy(codec = codecs[it.index]) })
+        // ExoPlayer ids are the MP4 track ids; track 2 (AV3A) is missing
+        val tracks =
+            TestTracks(
+                listOf(
+                    TestTrack("1", 0, MediaStreamType.VIDEO, false),
+                    TestTrack("3", 2, MediaStreamType.AUDIO, false),
+                    TestTrack("4", 3, MediaStreamType.AUDIO, false),
+                    TestTrack("5", 4, MediaStreamType.AUDIO, false),
+                    TestTrack("6", 5, MediaStreamType.SUBTITLE, false),
+                ),
+            ).toTracks()
+        val params = TrackSelectionParameters.Builder().build()
+
+        fun select(audioIndex: Int) =
+            TrackSelectionUtils.createTrackSelections(params, tracks, audioIndex, TrackIndex.DISABLED, source)
+
+        select(4).also {
+            Assert.assertTrue(it.audioSelected)
+            Assert.assertEquals("5", it.trackSelectionParameters.getAudioOverride()?.id)
+        }
+        select(2).also {
+            Assert.assertTrue(it.audioSelected)
+            Assert.assertEquals("3", it.trackSelectionParameters.getAudioOverride()?.id)
+        }
+        select(1).also {
+            Assert.assertEquals(TrackSelected.NOT_FOUND, it.audio)
+        }
     }
 }
 

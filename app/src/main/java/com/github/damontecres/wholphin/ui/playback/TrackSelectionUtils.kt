@@ -35,9 +35,7 @@ object TrackSelectionUtils {
                             group.type == C.TRACK_TYPE_TEXT && group.isExternal
                         }
                     } else {
-                        val playerIndex =
-                            getPlayerIndex(subtitleIndex, source, MediaStreamType.SUBTITLE)
-                        if (playerIndex != null) {
+                        val groups =
                             tracks.groups
                                 .filter { group ->
                                     group.type == C.TRACK_TYPE_TEXT &&
@@ -46,10 +44,8 @@ object TrackSelectionUtils {
                                 }
                                 // TODO why are exoplayer tracks out of order sometimes?
                                 .sortedById()
-                                .getOrNull(playerIndex)
-                        } else {
-                            null
-                        }
+                        getPlayerIndex(subtitleIndex, source, MediaStreamType.SUBTITLE, groups.size)
+                            ?.let(groups::getOrNull)
                     }
                 when {
                     chosenTrack != null && chosenTrack.isSupported -> {
@@ -79,19 +75,16 @@ object TrackSelectionUtils {
 
         val audioSelected =
             if (audioIndex != null && audioIndex >= 0) {
-                val playerIndex = getPlayerIndex(audioIndex, source, MediaStreamType.AUDIO)
+                val groups =
+                    tracks.groups
+                        .filter { group ->
+                            group.type == C.TRACK_TYPE_AUDIO && group.length >= 1
+                        }
+                        // TODO why are exoplayer tracks out of order sometimes?
+                        .sortedById()
                 val chosenTrack =
-                    if (playerIndex != null) {
-                        tracks.groups
-                            .filter { group ->
-                                group.type == C.TRACK_TYPE_AUDIO && group.length >= 1
-                            }
-                            // TODO why are exoplayer tracks out of order sometimes?
-                            .sortedById()
-                            .getOrNull(playerIndex)
-                    } else {
-                        null
-                    }
+                    getPlayerIndex(audioIndex, source, MediaStreamType.AUDIO, groups.size)
+                        ?.let(groups::getOrNull)
                 when {
                     chosenTrack != null && chosenTrack.isSupported -> {
                         paramsBuilder
@@ -121,8 +114,9 @@ object TrackSelectionUtils {
         serverIndex: Int,
         source: MediaSourceInfo,
         type: MediaStreamType,
+        playerTrackCount: Int,
     ): Int? {
-        val playerIndex =
+        val streams =
             source.mediaStreams
                 .orEmpty()
                 .filter { it.type == type }
@@ -132,8 +126,17 @@ object TrackSelectionUtils {
                     } else {
                         it
                     }
-                }.indexOfFirstOrNull { it.index == serverIndex }
-        return playerIndex
+                }
+        // ExoPlayer drops tracks it cannot parse (e.g. AV3A audio, which the server reports without a codec),
+        // which shifts every later track. Skip the streams the server could not identify when that is exactly the gap.
+        // ponytail: heuristic on codec == null; match on container track ids if other hidden tracks show up
+        val visible =
+            if (playerTrackCount < streams.size) {
+                streams.filter { it.codec != null }.takeIf { it.size == playerTrackCount } ?: streams
+            } else {
+                streams
+            }
+        return visible.indexOfFirstOrNull { it.index == serverIndex }
     }
 
     val Tracks.Group.trackFormats: List<Format>
