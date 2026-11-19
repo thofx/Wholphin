@@ -44,7 +44,6 @@ import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.GridItemDetails
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
-import com.github.damontecres.wholphin.ui.playback.theater.TheaterIcons
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -351,12 +350,10 @@ fun CollectionFolderHeader(
                             onShow = onShowFilterDropdown,
                         )
                     }
-                    // Nova: the toolbar uses the fork's line icons, one style for all its buttons
-                    ExpandablePlayButton(
+                    ExpandableFaButton(
                         title = R.string.view_options,
-                        resume = Duration.ZERO,
-                        icon = TheaterIcons.Sliders,
-                        onClick = { onClickShowViewOptions() },
+                        iconStringRes = R.string.fa_sliders,
+                        onClick = onClickShowViewOptions,
                         modifier =
                             Modifier.ifElse(
                                 sortOptions.isEmpty() && filterOptions.isEmpty(),
@@ -372,11 +369,10 @@ fun CollectionFolderHeader(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier,
                 ) {
-                    ExpandablePlayButton(
+                    ExpandableFaButton(
                         title = R.string.sort_by_random,
-                        resume = Duration.ZERO,
-                        icon = TheaterIcons.Dice,
-                        onClick = { onClickRandom() },
+                        iconStringRes = R.string.fa_dice,
+                        onClick = onClickRandom,
                         modifier = Modifier.focusRequester(randomButtonFocusRequester),
                         enabled = listIsNotEmpty,
                     )
@@ -385,14 +381,13 @@ fun CollectionFolderHeader(
                         ExpandablePlayButton(
                             title = R.string.play,
                             resume = Duration.ZERO,
-                            icon = TheaterIcons.Play,
+                            icon = Icons.Default.PlayArrow,
                             onClick = { onClickPlayAll.invoke(false) },
                             enabled = listIsNotEmpty,
                         )
-                        ExpandablePlayButton(
+                        ExpandableFaButton(
                             title = R.string.shuffle,
-                            resume = Duration.ZERO,
-                            icon = TheaterIcons.Shuffle,
+                            iconStringRes = R.string.fa_shuffle,
                             onClick = { onClickPlayAll.invoke(true) },
                             enabled = listIsNotEmpty,
                         )

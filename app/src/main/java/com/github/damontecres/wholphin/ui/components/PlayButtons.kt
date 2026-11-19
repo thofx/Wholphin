@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
@@ -60,6 +61,7 @@ import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.data.ChooseVersionParams
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.main.nova.NovaIcons
 import com.github.damontecres.wholphin.ui.theme.PreviewInteractionSource
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -247,13 +249,16 @@ fun ExpandablePlayButton(
     title = title,
     resume = resume,
     icon = {
+        // Nova: line icons, a bit smaller than upstream's filled glyphs to keep the same visual weight
+        val nova = NovaIcons.forMaterial(icon)
         Icon(
-            imageVector = icon,
+            imageVector = nova,
             contentDescription = null,
             modifier =
                 Modifier
-                    .size(28.dp)
-                    .ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
+                    .size(if (nova !== icon) 24.dp else 28.dp)
+                    // The restart line icon already points back
+                    .ifElse(mirrorIcon && nova === icon, Modifier.graphicsLayer { scaleX = -1f }),
         )
     },
     onClick = onClick,
@@ -302,6 +307,7 @@ fun ExpandablePlayButton(
     enabled: Boolean = true,
 ) {
     val isFocused = interactionSource.collectIsFocusedAsState().value
+    val showTitle = isFocused || NovaIcons.isPrimaryAction(title)
     Button(
         onClick = { onClick.invoke(resume) },
         enabled = enabled,
@@ -323,7 +329,7 @@ fun ExpandablePlayButton(
         ) {
             icon.invoke(this)
         }
-        AnimatedVisibility(isFocused) {
+        AnimatedVisibility(showTitle) {
             Spacer(Modifier.size(8.dp))
             Text(
                 text = stringResource(title),
@@ -365,15 +371,29 @@ fun ExpandableFaButton(
                 Modifier
                     .size(32.dp),
         ) {
-            Text(
-                text = stringResource(iconStringRes),
-                style = MaterialTheme.typography.titleSmall,
-                color = iconColor,
-                fontSize = 16.sp,
-                fontFamily = FontAwesome,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.align(Alignment.Center),
-            )
+            // Nova: line icon where there is one (a colored icon, e.g. a favorite's heart, is filled)
+            val nova = NovaIcons.forFontAwesome(iconStringRes, filled = iconColor.isSpecified)
+            if (nova != null) {
+                Icon(
+                    imageVector = nova,
+                    contentDescription = null,
+                    tint = iconColor.takeOrElse { LocalContentColor.current },
+                    modifier =
+                        Modifier
+                            .align(Alignment.Center)
+                            .size(22.dp),
+                )
+            } else {
+                Text(
+                    text = stringResource(iconStringRes),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = iconColor,
+                    fontSize = 16.sp,
+                    fontFamily = FontAwesome,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
         }
         AnimatedVisibility(isFocused) {
             Text(
@@ -450,13 +470,13 @@ fun DeleteButton(
         resume = Duration.ZERO,
         icon = {
             Icon(
-                imageVector = Icons.Default.Delete,
+                imageVector = NovaIcons.forMaterial(Icons.Default.Delete),
                 contentDescription = null,
                 tint = if (iconTint.isSpecified) iconTint else LocalContentColor.current,
                 modifier =
                     Modifier
                         .padding(start = 2.dp)
-                        .size(24.dp),
+                        .size(22.dp),
             )
         },
         onClick = { showDeleteDialog = true },
