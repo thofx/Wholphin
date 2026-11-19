@@ -12,4 +12,5 @@
     <string name="nova_favorites_empty_hint">在任意影片或剧集上长按确认键，选择「收藏」\n收藏的内容会按类型出现在这里</string>
     <string name="nova_go_home">返回首页</string>
     <string name="nova_quick_connect_prompt">请在已登录的设备上使用快速连接，登录到 %1$s</string>
+    <string name="nova_overview">简介</string>
 </resources>

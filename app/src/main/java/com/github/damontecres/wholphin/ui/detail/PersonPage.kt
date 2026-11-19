@@ -66,6 +66,8 @@ import com.github.damontecres.wholphin.ui.formatDate
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
+import com.github.damontecres.wholphin.ui.main.nova.NovaPersonHeader
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.rememberPosition
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
@@ -361,25 +363,51 @@ fun PersonPageContent(
         modifier = modifier,
     ) {
         item {
-            PersonHeader(
-                name = name,
-                overview = overview,
-                imageUrl = imageUrl,
-                birthdate = birthdate,
-                birthPlace = birthPlace,
-                deathdate = deathdate,
-                favorite = favorite,
-                overviewOnClick = overviewOnClick,
-                favoriteOnClick = favoriteOnClick,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 480.dp)
-                        .padding(top = 16.dp, bottom = 40.dp)
-                        .focusRequester(headerFocusRequester)
-                        .onFocusChanged {
-                            focusedOnHeader = it.hasFocus
-                        },
+            // Nova: a portrait, one line of facts and the overview over one of their works' backdrop
+            val header: @Composable (Modifier) -> Unit =
+                if (NOVA_HOME_ENABLED) {
+                    { mod ->
+                        NovaPersonHeader(
+                            name = name,
+                            overview = overview,
+                            imageUrl = imageUrl,
+                            birthdate = birthdate,
+                            deathdate = deathdate,
+                            birthPlace = birthPlace,
+                            favorite = favorite,
+                            backdropItem =
+                                listOf(movies, series)
+                                    .firstNotNullOfOrNull { (it as? RowLoadingState.Success)?.items?.firstOrNull() },
+                            overviewOnClick = overviewOnClick,
+                            favoriteOnClick = favoriteOnClick,
+                            modifier = mod,
+                        )
+                    }
+                } else {
+                    { mod ->
+                        PersonHeader(
+                            name = name,
+                            overview = overview,
+                            imageUrl = imageUrl,
+                            birthdate = birthdate,
+                            birthPlace = birthPlace,
+                            deathdate = deathdate,
+                            favorite = favorite,
+                            overviewOnClick = overviewOnClick,
+                            favoriteOnClick = favoriteOnClick,
+                            modifier = mod,
+                        )
+                    }
+                }
+            header(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 480.dp)
+                    .padding(top = 16.dp, bottom = 40.dp)
+                    .focusRequester(headerFocusRequester)
+                    .onFocusChanged {
+                        focusedOnHeader = it.hasFocus
+                    },
             )
         }
         item {
