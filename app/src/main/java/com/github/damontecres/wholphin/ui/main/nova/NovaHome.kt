@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -50,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -104,6 +106,9 @@ fun NovaDimBackdrop(amount: Float = .78f) {
 
 /** Left edge of page content, the same line as the home top bar's first icon */
 internal val NovaContentStart = 48.dp
+
+/** Moves a tab row back by its tabs' inner padding, so the first tab's text sits on the content's edge */
+val NovaTabTextInset: Dp get() = if (NOVA_HOME_ENABLED) (-16).dp else 0.dp
 
 /** Title of the current page (a library, favorites) shown before its tabs; null when it has none */
 internal val LocalNovaPageTitle = staticCompositionLocalOf<String?> { null }
@@ -209,11 +214,15 @@ fun NovaTabHeader(
     }
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         // Not focusable: back is the remote's back key
+        // The glyph has blank space on its start; pulled back so the arrow itself sits on the content's edge
         Icon(
             Icons.AutoMirrored.Filled.KeyboardArrowLeft,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
-            modifier = Modifier.size(28.dp),
+            modifier =
+                Modifier
+                    .offset(x = (-9).dp)
+                    .size(28.dp),
         )
         Text(
             text = title,

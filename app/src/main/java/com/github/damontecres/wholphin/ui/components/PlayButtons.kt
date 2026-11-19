@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSizeIn
@@ -61,6 +62,9 @@ import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.data.ChooseVersionParams
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
+import com.github.damontecres.wholphin.ui.main.nova.NovaActionButton
+import com.github.damontecres.wholphin.ui.main.nova.NovaButtonIconSize
 import com.github.damontecres.wholphin.ui.main.nova.NovaIcons
 import com.github.damontecres.wholphin.ui.theme.PreviewInteractionSource
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
@@ -256,7 +260,7 @@ fun ExpandablePlayButton(
             contentDescription = null,
             modifier =
                 Modifier
-                    .size(if (nova !== icon) 24.dp else 28.dp)
+                    .size(if (NOVA_HOME_ENABLED) NovaButtonIconSize else 28.dp)
                     // The restart line icon already points back
                     .ifElse(mirrorIcon && nova === icon, Modifier.graphicsLayer { scaleX = -1f }),
         )
@@ -308,6 +312,18 @@ fun ExpandablePlayButton(
 ) {
     val isFocused = interactionSource.collectIsFocusedAsState().value
     val showTitle = isFocused || NovaIcons.isPrimaryAction(title)
+    if (NOVA_HOME_ENABLED) {
+        NovaActionButton(
+            label = stringResource(title),
+            showLabel = showTitle,
+            onClick = { onClick.invoke(resume) },
+            enabled = enabled,
+            interactionSource = interactionSource,
+            modifier = modifier,
+            icon = icon,
+        )
+        return
+    }
     Button(
         onClick = { onClick.invoke(resume) },
         enabled = enabled,
@@ -354,6 +370,36 @@ fun ExpandableFaButton(
     enabled: Boolean = true,
 ) {
     val isFocused = interactionSource.collectIsFocusedAsState().value
+    if (NOVA_HOME_ENABLED) {
+        NovaActionButton(
+            label = stringResource(title),
+            showLabel = isFocused,
+            onClick = onClick,
+            enabled = enabled,
+            interactionSource = interactionSource,
+            modifier = modifier,
+        ) {
+            // A line icon where there is one (a colored icon, e.g. a favorite's heart, is filled), else upstream's glyph
+            val nova = NovaIcons.forFontAwesome(iconStringRes, filled = iconColor.isSpecified)
+            if (nova != null) {
+                Icon(
+                    imageVector = nova,
+                    contentDescription = null,
+                    tint = iconColor.takeOrElse { LocalContentColor.current },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Text(
+                    text = stringResource(iconStringRes),
+                    color = iconColor.takeOrElse { LocalContentColor.current },
+                    fontSize = 16.sp,
+                    fontFamily = FontAwesome,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+        return
+    }
     Button(
         onClick = onClick,
         enabled = enabled,
@@ -371,29 +417,15 @@ fun ExpandableFaButton(
                 Modifier
                     .size(32.dp),
         ) {
-            // Nova: line icon where there is one (a colored icon, e.g. a favorite's heart, is filled)
-            val nova = NovaIcons.forFontAwesome(iconStringRes, filled = iconColor.isSpecified)
-            if (nova != null) {
-                Icon(
-                    imageVector = nova,
-                    contentDescription = null,
-                    tint = iconColor.takeOrElse { LocalContentColor.current },
-                    modifier =
-                        Modifier
-                            .align(Alignment.Center)
-                            .size(22.dp),
-                )
-            } else {
-                Text(
-                    text = stringResource(iconStringRes),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = iconColor,
-                    fontSize = 16.sp,
-                    fontFamily = FontAwesome,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.align(Alignment.Center),
-                )
-            }
+            Text(
+                text = stringResource(iconStringRes),
+                style = MaterialTheme.typography.titleSmall,
+                color = iconColor,
+                fontSize = 16.sp,
+                fontFamily = FontAwesome,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.align(Alignment.Center),
+            )
         }
         AnimatedVisibility(isFocused) {
             Text(

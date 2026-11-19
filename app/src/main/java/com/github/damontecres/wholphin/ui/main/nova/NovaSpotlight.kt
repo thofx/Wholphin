@@ -94,6 +94,7 @@ import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.playback.isUp
 import com.github.damontecres.wholphin.ui.playback.playable
 import com.github.damontecres.wholphin.ui.playback.theater.TheaterColors
+import com.github.damontecres.wholphin.ui.playback.theater.TheaterIcons
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.LoadingState
@@ -525,26 +526,18 @@ private fun PrimaryButton(
     // Play what can be played; a series opens its details (it has no single video to start)
     val (icon, label) =
         when {
-            !entry.item.type.playable -> Icons.Default.Info to R.string.nova_home_details
-            entry.kind == SpotlightKind.CONTINUE -> Icons.Default.PlayArrow to R.string.resume
-            else -> Icons.Default.PlayArrow to R.string.play
+            !entry.item.type.playable -> TheaterIcons.Info to R.string.nova_home_details
+            entry.kind == SpotlightKind.CONTINUE -> TheaterIcons.Play to R.string.resume
+            else -> TheaterIcons.Play to R.string.play
         }
-    Surface(
+    NovaActionButton(
+        label = stringResource(label),
+        showLabel = true,
         onClick = onClick,
         onLongClick = onLongClick,
-        shape = ClickableSurfaceDefaults.shape(CircleShape),
-        colors = novaPillColors(containerColor = TheaterColors.Glass),
-        scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
         modifier = modifier,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(horizontal = 22.dp, vertical = 10.dp),
-        ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-            Text(text = stringResource(label), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        }
+        Icon(icon, contentDescription = null, modifier = Modifier.fillMaxSize())
     }
 }
 

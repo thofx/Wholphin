@@ -1,9 +1,12 @@
 package com.github.damontecres.wholphin.ui.main.nova
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,6 +38,7 @@ import com.github.damontecres.wholphin.ui.components.ExpandablePlayButton
 import com.github.damontecres.wholphin.ui.formatDate
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.nav.ApplicationContentViewModel
+import com.github.damontecres.wholphin.ui.playback.theater.TheaterColors
 import com.github.damontecres.wholphin.ui.playback.theater.TheaterIcons
 import java.time.LocalDate
 import kotlin.time.Duration
@@ -67,15 +71,27 @@ fun NovaPersonHeader(
         // Clear of the clock
         modifier = modifier.padding(top = 32.dp),
     ) {
-        AsyncImage(
-            model = imageUrl,
-            contentDescription = name,
-            contentScale = ContentScale.Crop,
+        // The name's first letter behind the photo, shown when there is none
+        Box(
+            contentAlignment = Alignment.Center,
             modifier =
                 Modifier
                     .size(width = 200.dp, height = 267.dp)
-                    .clip(RoundedCornerShape(16.dp)),
-        )
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(TheaterColors.accent.copy(alpha = .28f)),
+        ) {
+            Text(
+                text = name.take(1),
+                style = MaterialTheme.typography.displayMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .8f),
+            )
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.widthIn(max = 620.dp),
@@ -121,17 +137,16 @@ fun NovaPersonHeader(
                 modifier = Modifier.padding(top = 8.dp),
             ) {
                 // The page's main action keeps its label
-                Button(onClick = favoriteOnClick) {
+                NovaActionButton(
+                    label = stringResource(if (favorite) R.string.remove_favorite else R.string.add_favorite),
+                    showLabel = true,
+                    onClick = favoriteOnClick,
+                ) {
                     Icon(
                         imageVector = if (favorite) TheaterIcons.HeartFilled else TheaterIcons.Heart,
                         contentDescription = null,
                         tint = if (favorite) Color.Red else LocalContentColor.current,
-                        modifier = Modifier.size(20.dp),
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(if (favorite) R.string.remove_favorite else R.string.add_favorite),
-                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.fillMaxSize(),
                     )
                 }
                 if (overview.isNotNullOrBlank()) {

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.main.nova.NovaTabTextInset
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.ui.util.StringStringProvider
@@ -70,6 +72,8 @@ fun TabRow(
         state = state,
         modifier =
             modifier
+                // Nova: the first tab's text, not its pill, lines up with the content below
+                .offset(x = NovaTabTextInset)
                 .onFocusChanged {
                     rowHasFocus = it.hasFocus
                 }.focusGroup()
@@ -133,6 +137,8 @@ fun <T> KeyedTabRow(
         state = state,
         modifier =
             modifier
+                // Nova: the first tab's text, not its pill, lines up with the content below
+                .offset(x = NovaTabTextInset)
                 .onFocusChanged {
                     rowHasFocus = it.hasFocus
                 }.focusGroup()
