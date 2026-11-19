@@ -133,7 +133,7 @@ class TheaterState(
         // Duration is C.TIME_UNSET (negative) until known, then only the lower bound applies
         val duration = player.duration
         seekTargetMs = if (duration > 0) target.coerceAtMost(duration) else target
-        if (!visible) controller.showControls()
+        // No overlay: the seek feedback on the side of the screen is enough, the overlay would repeat it
     }
 
     fun clearSeek() {

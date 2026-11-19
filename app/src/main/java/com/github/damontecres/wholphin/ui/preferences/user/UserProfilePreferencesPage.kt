@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,6 +59,7 @@ import com.github.damontecres.wholphin.ui.preferences.ClickPreference
 import com.github.damontecres.wholphin.ui.preferences.ComposablePreference
 import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
 import com.github.damontecres.wholphin.ui.tryRequestFocus
+import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import timber.log.Timber
 
@@ -109,6 +111,7 @@ fun UserProfilePreferencesContent(
     }
 
     // Nova: the group shown
+    val scope = rememberCoroutineScope()
     var selectedGroup by rememberSaveable { mutableIntStateOf(0) }
     val list: @Composable (Modifier) -> Unit = { listModifier ->
         LazyColumn(
@@ -271,7 +274,15 @@ fun UserProfilePreferencesContent(
             title = stringResource(R.string.profile_specific_settings),
             groups = UserProfileSettings.Preferences.map { stringResource(it.title) },
             selectedGroup = selectedGroup,
-            onSelectGroup = { selectedGroup = it },
+            listFocusRequester = focusRequester,
+            onSelectGroup = {
+                if (it != selectedGroup) {
+                    selectedGroup = it
+                    // The first setting of the group takes the initial focus, from the top of the list
+                    focusedIndex = Pair(it, 0)
+                    scope.launch { state.scrollToItem(0) }
+                }
+            },
             modifier = modifier,
             list = list,
         )

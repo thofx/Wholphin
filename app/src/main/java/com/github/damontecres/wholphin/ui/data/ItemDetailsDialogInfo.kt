@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.HorizontalDivider
@@ -38,9 +37,9 @@ import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
 import com.github.damontecres.wholphin.ui.main.nova.NovaExpandableCard
 import com.github.damontecres.wholphin.ui.main.nova.NovaSheet
-import com.github.damontecres.wholphin.ui.main.nova.audioCard
+import com.github.damontecres.wholphin.ui.main.nova.audioSummary
 import com.github.damontecres.wholphin.ui.main.nova.generalSummary
-import com.github.damontecres.wholphin.ui.main.nova.subtitleCard
+import com.github.damontecres.wholphin.ui.main.nova.subtitleSummary
 import com.github.damontecres.wholphin.ui.main.nova.videoHeadline
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatAudioCodec
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatSubtitleCodec
@@ -221,7 +220,9 @@ fun ItemDetailsDialog(
                                 },
                         )
                     }
-                    listOf(audioLabel to audioStreams, subtitleLabel to subtitleStreams).forEach { (label, streams) ->
+                    val isAudioSection = listOf(true, false)
+                    listOf(audioLabel to audioStreams, subtitleLabel to subtitleStreams).zip(isAudioSection).forEach { (section, isAudio) ->
+                        val (label, streams) = section
                         if (streams.isNotEmpty()) {
                             item {
                                 Text(
@@ -232,14 +233,13 @@ fun ItemDetailsDialog(
                                 )
                             }
                             itemsIndexed(streams) { index, stream ->
-                                val isAudio = label == audioLabel
-                                val (primary, flags, secondary) =
-                                    remember { if (isAudio) audioCard(resources, stream) else subtitleCard(stream) }
+                                val summary =
+                                    remember { if (isAudio) audioSummary(resources, stream) else subtitleSummary(stream) }
                                 NovaExpandableCard(
                                     title = "${index + 1}",
-                                    primary = primary,
-                                    flags = flags,
-                                    secondary = secondary,
+                                    primary = summary.primary,
+                                    flags = summary.flags,
+                                    secondary = summary.secondary,
                                     details =
                                         remember {
                                             if (isAudio) {

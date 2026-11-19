@@ -290,7 +290,7 @@ fun ExpandablePlayButton(
             contentDescription = null,
             modifier =
                 Modifier
-                    .size(28.dp)
+                    .size(if (NOVA_HOME_ENABLED) NovaButtonIconSize else 28.dp)
                     .ifElse(mirrorIcon, Modifier.graphicsLayer { scaleX = -1f }),
         )
     },
@@ -508,7 +508,7 @@ fun DeleteButton(
                 modifier =
                     Modifier
                         .padding(start = 2.dp)
-                        .size(22.dp),
+                        .size(if (NOVA_HOME_ENABLED) 22.dp else 24.dp),
             )
         },
         onClick = { showDeleteDialog = true },

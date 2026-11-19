@@ -44,6 +44,7 @@ import com.github.damontecres.wholphin.ui.detail.CardGrid
 import com.github.damontecres.wholphin.ui.detail.GridItemDetails
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.main.HomePageHeader
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
 import com.github.damontecres.wholphin.ui.util.ScrollToTopBringIntoViewSpec
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.CollectionType
@@ -318,7 +319,7 @@ fun CollectionFolderHeader(
                 modifier =
                     Modifier
                         // Nova: the toolbar starts on the grid's edge, under the page title
-                        .padding(start = 8.dp, end = endPadding)
+                        .padding(start = if (NOVA_HOME_ENABLED) 8.dp else 16.dp, end = endPadding)
                         .fillMaxWidth(),
             ) {
                 Row(

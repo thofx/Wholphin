@@ -18,7 +18,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -27,6 +31,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.ui.playback.theater.TheaterColors
+import com.github.damontecres.wholphin.ui.tryRequestFocus
 
 /**
  * The settings pages' layout: the screen's title and its groups on the left (focusing one shows it), the group's
@@ -38,6 +43,7 @@ fun NovaSettingsLayout(
     groups: List<String>,
     selectedGroup: Int,
     onSelectGroup: (Int) -> Unit,
+    listFocusRequester: FocusRequester,
     modifier: Modifier = Modifier,
     list: @Composable (Modifier) -> Unit,
 ) {
@@ -57,7 +63,11 @@ fun NovaSettingsLayout(
                 maxLines = 2,
                 modifier = Modifier.padding(start = 16.dp, bottom = 24.dp),
             )
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.focusGroup()) {
+            // Back from the settings, focus returns to the group they belong to, not the nearest one
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.focusGroup().focusRestorer(),
+            ) {
                 itemsIndexed(groups) { index, group ->
                     GroupItem(
                         text = group,
@@ -69,6 +79,9 @@ fun NovaSettingsLayout(
         }
         list(
             Modifier
+                // Entering from the groups lands on the group's first setting, not the one nearest the group's row
+                .focusGroup()
+                .focusProperties { onEnter = { listFocusRequester.tryRequestFocus() } }
                 .width(600.dp)
                 .fillMaxHeight(),
         )
@@ -94,7 +107,7 @@ private fun GroupItem(
                             alpha = .08f,
                         )
                     } else {
-                        TheaterColors.Glass.copy(alpha = 0f)
+                        Color.Transparent
                     },
                 contentColor = if (selected) TheaterColors.Text else TheaterColors.Text.copy(alpha = .7f),
             ),

@@ -25,6 +25,7 @@ import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.data.SortAndDirection
 import com.github.damontecres.wholphin.ui.data.flip
 import com.github.damontecres.wholphin.ui.data.getStringRes
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
 import com.github.damontecres.wholphin.ui.playback.theater.TheaterIcons
 import org.jellyfin.sdk.model.api.ItemSortBy
 import org.jellyfin.sdk.model.api.SortOrder
@@ -53,13 +54,17 @@ fun SortByButton(
             },
         ) {
             // Nova: a line arrow for the direction, like the rest of the toolbar's icons
-            Icon(
-                imageVector = if (current.direction == SortOrder.ASCENDING) TheaterIcons.ArrowUp else TheaterIcons.ArrowDown,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(text = stringResource(getStringRes(current.sort)))
+            if (NOVA_HOME_ENABLED) {
+                Icon(
+                    imageVector = if (current.direction == SortOrder.ASCENDING) TheaterIcons.ArrowUp else TheaterIcons.ArrowDown,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(text = stringResource(getStringRes(current.sort)))
+            } else {
+                Text(text = current.toAnnotatedString())
+            }
         }
 
         DropdownMenu(

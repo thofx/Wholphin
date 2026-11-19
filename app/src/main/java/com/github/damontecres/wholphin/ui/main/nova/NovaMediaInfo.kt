@@ -193,11 +193,18 @@ private fun MediaStream.flags(): List<String> =
         "SDH".takeIf { isHearingImpaired == true },
     )
 
+/** What a track's card shows before it is expanded */
+data class StreamSummary(
+    val primary: String,
+    val flags: List<String>,
+    val secondary: String?,
+)
+
 /** Language, codec, layout on the first line; the file's title, bitrate and sample rate below */
-fun audioCard(
+fun audioSummary(
     resources: Resources,
     stream: MediaStream,
-): Triple<String, List<String>, String?> {
+): StreamSummary {
     val primary =
         listOfNotNull(
             stream.language?.takeIf { it.isNotBlank() && it != "und" }?.let(::languageName),
@@ -210,15 +217,15 @@ fun audioCard(
             stream.bitRate?.let(::formatBitrate),
             stream.sampleRate?.let { "$it Hz" },
         ).joinToString(" · ")
-    return Triple(primary, stream.flags(), secondary)
+    return StreamSummary(primary, stream.flags(), secondary)
 }
 
 /** Language and format on the first line, the file's title below */
-fun subtitleCard(stream: MediaStream): Triple<String, List<String>, String?> {
+fun subtitleSummary(stream: MediaStream): StreamSummary {
     val primary =
         listOfNotNull(
             stream.language?.takeIf { it.isNotBlank() && it != "und" }?.let(::languageName),
             formatSubtitleCodec(stream.codec),
         ).joinToString(" · ").ifBlank { stream.codec.orEmpty() }
-    return Triple(primary, stream.flags(), stream.title)
+    return StreamSummary(primary, stream.flags(), stream.title)
 }

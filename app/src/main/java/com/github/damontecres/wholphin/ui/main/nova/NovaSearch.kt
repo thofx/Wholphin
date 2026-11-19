@@ -1,6 +1,5 @@
 package com.github.damontecres.wholphin.ui.main.nova
 
-import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -11,11 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -28,6 +24,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.HomeRowViewOptions
+import com.github.damontecres.wholphin.services.KeyValueService
 import com.github.damontecres.wholphin.ui.ItemRowFields
 import com.github.damontecres.wholphin.ui.cards.ItemRow
 import com.github.damontecres.wholphin.ui.launchIO
@@ -35,13 +32,12 @@ import com.github.damontecres.wholphin.ui.main.HomePageCardContent
 import com.github.damontecres.wholphin.ui.playback.theater.TheaterIcons
 import com.github.damontecres.wholphin.ui.toBaseItems
 import com.github.damontecres.wholphin.util.GetItemsRequestHandler
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
-import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ItemSortBy
@@ -50,72 +46,43 @@ import org.jellyfin.sdk.model.api.request.GetItemsRequest
 import timber.log.Timber
 import javax.inject.Inject
 
+private const val RECENT_KEY = "nova_recent_searches"
+private const val MAX_RECENT = 8
+
 /**
- * Recent search queries, on this device only, kept per server and user: profiles on one TV (possibly protected by a
- * PIN) do not see each other's searches.
+ * The empty search page's data: the user's recent searches (kept on this device, per user, via [KeyValueService])
+ * and top rated movies and shows they have not watched
  */
-object RecentSearches {
-    private const val PREFS_NAME = "nova_search"
-    private const val MAX = 8
-
-    @EntryPoint
-    @InstallIn(SingletonComponent::class)
-    interface RecentSearchesEntryPoint {
-        fun serverRepository(): ServerRepository
-    }
-
-    /** The current user's key; null without a user, then nothing is read or kept */
-    private fun key(context: Context): String? =
-        EntryPointAccessors
-            .fromApplication(context.applicationContext, RecentSearchesEntryPoint::class.java)
-            .serverRepository()
-            .currentUser
-            ?.let { "recent_${it.serverId}_${it.id}" }
-
-    fun get(context: Context): List<String> =
-        key(context)
-            ?.let { context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(it, null) }
-            ?.split('\n')
-            ?.filter { it.isNotBlank() }
-            .orEmpty()
-
-    fun add(
-        context: Context,
-        query: String,
-    ) {
-        val q = query.trim()
-        if (q.isEmpty()) return
-        save(context, (listOf(q) + get(context).filter { it != q }).take(MAX))
-    }
-
-    fun remove(
-        context: Context,
-        query: String,
-    ) = save(context, get(context).filter { it != query })
-
-    fun clear(context: Context) = save(context, emptyList())
-
-    private fun save(
-        context: Context,
-        list: List<String>,
-    ) {
-        val key = key(context) ?: return
-        context
-            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putString(key, list.joinToString("\n"))
-            .apply()
-    }
-}
-
-/** Top rated movies and shows the user has not watched, for the empty search page */
 @HiltViewModel
 class NovaSearchViewModel
     @Inject
     constructor(
         private val api: ApiClient,
         private val serverRepository: ServerRepository,
+        private val keyValueService: KeyValueService,
     ) : ViewModel() {
+        private val userId get() = serverRepository.currentUser?.id
+
+        val recentSearches: Flow<List<String>> =
+            userId?.let { keyValueService.get(it, RECENT_KEY, emptyList<String>()) } ?: flowOf(emptyList())
+
+        fun addRecent(query: String) {
+            val q = query.trim()
+            if (q.isNotEmpty()) updateRecent { listOf(q) + it.filter { s -> s != q } }
+        }
+
+        fun removeRecent(query: String) = updateRecent { it - query }
+
+        fun clearRecent() = updateRecent { emptyList() }
+
+        private fun updateRecent(change: (List<String>) -> List<String>) {
+            val id = userId ?: return
+            viewModelScope.launchIO {
+                val current = keyValueService.get(id, RECENT_KEY, emptyList<String>()).first()
+                keyValueService.save(id, RECENT_KEY, change(current).take(MAX_RECENT))
+            }
+        }
+
         private val _topRated = MutableStateFlow<List<BaseItem>>(emptyList())
         val topRated: StateFlow<List<BaseItem>> = _topRated
 
@@ -153,8 +120,7 @@ fun NovaSearchEmpty(
     modifier: Modifier = Modifier,
     viewModel: NovaSearchViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
-    var recent by remember { mutableStateOf(RecentSearches.get(context)) }
+    val recent by viewModel.recentSearches.collectAsState(emptyList())
     val topRated by viewModel.topRated.collectAsState()
     LaunchedEffect(Unit) { viewModel.load() }
     Column(verticalArrangement = Arrangement.spacedBy(28.dp), modifier = modifier.fillMaxSize()) {
@@ -171,10 +137,7 @@ fun NovaSearchEmpty(
                             label = query,
                             showLabel = true,
                             onClick = { onSearch(query) },
-                            onLongClick = {
-                                RecentSearches.remove(context, query)
-                                recent = RecentSearches.get(context)
-                            },
+                            onLongClick = { viewModel.removeRecent(query) },
                         ) {
                             Icon(TheaterIcons.Clock, contentDescription = null)
                         }
@@ -182,10 +145,7 @@ fun NovaSearchEmpty(
                     NovaActionButton(
                         label = stringResource(R.string.nova_clear),
                         showLabel = true,
-                        onClick = {
-                            RecentSearches.clear(context)
-                            recent = emptyList()
-                        },
+                        onClick = viewModel::clearRecent,
                     ) {
                         Icon(TheaterIcons.Trash, contentDescription = null)
                     }

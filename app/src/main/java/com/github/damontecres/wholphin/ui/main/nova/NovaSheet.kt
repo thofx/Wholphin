@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,23 +18,16 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.github.damontecres.wholphin.ui.playback.theater.TheaterColors
 import com.github.damontecres.wholphin.ui.tryRequestFocus
-import kotlinx.coroutines.launch
 
 /**
  * A full height panel sliding in from the end, scrolled with up / down: long reading content (an item's overview and
@@ -49,7 +41,6 @@ fun NovaSheet(
     content: LazyListScope.() -> Unit,
 ) {
     val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
     val visible = remember { MutableTransitionState(false).apply { targetState = true } }
     Dialog(

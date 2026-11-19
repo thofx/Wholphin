@@ -75,7 +75,7 @@ import com.github.damontecres.wholphin.ui.detail.livetv.ProgramDialog
 import com.github.damontecres.wholphin.ui.ifElse
 import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
 import com.github.damontecres.wholphin.ui.main.nova.NovaSearchEmpty
-import com.github.damontecres.wholphin.ui.main.nova.RecentSearches
+import com.github.damontecres.wholphin.ui.main.nova.NovaSearchViewModel
 import com.github.damontecres.wholphin.ui.nav.Destination
 import com.github.damontecres.wholphin.ui.onMain
 import com.github.damontecres.wholphin.ui.titleStringRes
@@ -141,11 +141,11 @@ fun SearchPage(
         }
     }
 
-    val context = LocalContext.current
+    val novaSearchViewModel: NovaSearchViewModel = hiltViewModel()
 
     fun triggerImmediateSearch(searchQuery: String) {
         // Nova: an explicit search (keyboard, voice, a recent one) is worth remembering
-        if (NOVA_HOME_ENABLED) RecentSearches.add(context, searchQuery)
+        if (NOVA_HOME_ENABLED) novaSearchViewModel.addRecent(searchQuery)
         immediateSearchQuery = searchQuery
         searchClicked = true
         viewModel.search(searchQuery, combinedMode)
@@ -169,7 +169,7 @@ fun SearchPage(
     val onClickItem = { _: Int, item: BaseItem ->
         Timber.v("Clicked %s, type=%s", item.id, item.type)
         // Nova: a query that led somewhere is remembered
-        if (NOVA_HOME_ENABLED) RecentSearches.add(context, query)
+        if (NOVA_HOME_ENABLED) novaSearchViewModel.addRecent(query)
         if (item.type == BaseItemKind.TV_PROGRAM || item.type == BaseItemKind.PROGRAM || item.type == BaseItemKind.LIVE_TV_PROGRAM) {
             viewModel.fetchProgramForDialog(item.id)
             showProgramDialog = true
@@ -389,6 +389,7 @@ fun SearchPage(
             when {
                 NOVA_HOME_ENABLED && query.isBlank() -> {
                     NovaSearchEmpty(
+                        viewModel = novaSearchViewModel,
                         onSearch = {
                             query = it
                             triggerImmediateSearch(it)

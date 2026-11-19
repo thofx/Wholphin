@@ -541,6 +541,9 @@ private fun SpecTags(playback: PlaybackState) {
 /** The channel layout ending a generated audio title: "stereo", "mono", "5.1", "7.1.2" */
 private val ChannelLayoutSuffix = Regex("""\s+(stereo|mono|\d(\.\d){1,2})$""", RegexOption.IGNORE_CASE)
 
+/** Width of the buttons with a short label (skip, danmaku, more); the others share ValueButtonWidth */
+private val ShortButtonWidth = 128.dp
+
 /** How long the seek feedback stays after the last press has been applied */
 private const val SEEK_HUD_LINGER_MS = 600L
 
@@ -855,7 +858,7 @@ private fun ButtonRow(
             if (segment != null) {
                 TheaterButton(
                     onClick = onSkipSegment,
-                    modifier = Modifier.focusRequester(skipRequester),
+                    modifier = Modifier.width(ShortButtonWidth).focusRequester(skipRequester),
                 ) {
                     TheaterIcon(TheaterIcons.Skip, size = 20.dp)
                     Text(text = stringResource(R.string.skip), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
@@ -911,14 +914,14 @@ private fun ButtonRow(
                     // Click toggles, the most common action; long press opens the settings
                     onClick = onToggleDanmaku,
                     onLongClick = { state.openPanel(TheaterPanel.DANMAKU) },
-                    width = 128.dp,
+                    width = ShortButtonWidth,
                     modifier = Modifier.focusRequester(requesters.getValue(TheaterPanel.DANMAKU)),
                 )
             }
         }
         TheaterButton(
             onClick = { state.openPanel(TheaterPanel.MORE) },
-            modifier = Modifier.focusRequester(requesters.getValue(TheaterPanel.MORE)),
+            modifier = Modifier.width(ShortButtonWidth).focusRequester(requesters.getValue(TheaterPanel.MORE)),
         ) {
             TheaterIcon(TheaterIcons.More)
             Text(text = stringResource(R.string.more), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)

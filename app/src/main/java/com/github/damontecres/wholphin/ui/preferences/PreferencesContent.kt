@@ -682,7 +682,15 @@ fun PreferencesContent(
             title = stringResource(screenTitle),
             groups = groupTitles,
             selectedGroup = selectedGroup,
-            onSelectGroup = { selectedGroup = it },
+            listFocusRequester = focusRequester,
+            onSelectGroup = {
+                if (it != selectedGroup) {
+                    selectedGroup = it
+                    // The first setting of the group takes the initial focus, from the top of the list
+                    focusedIndex = Pair(it, 0)
+                    scope.launch { state.scrollToItem(0) }
+                }
+            },
             modifier = modifier,
             list = list,
         )

@@ -69,6 +69,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.ui.AppColors
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.ifElse
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
 import com.github.damontecres.wholphin.ui.playback.isBackwardButton
 import com.github.damontecres.wholphin.ui.playback.isForwardButton
 import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
@@ -323,7 +324,7 @@ fun <T : CardGridItem> CardGrid(
                         verticalArrangement = Arrangement.spacedBy(spacing),
                         state = gridState,
                         // Nova: start on the line of the page title and the toolbar
-                        contentPadding = PaddingValues(start = 8.dp, top = 16.dp, bottom = 16.dp),
+                        contentPadding = PaddingValues(start = if (NOVA_HOME_ENABLED) 8.dp else 0.dp, top = 16.dp, bottom = 16.dp),
                         modifier =
                             Modifier
                                 .fillMaxSize()
@@ -410,10 +411,20 @@ fun <T : CardGridItem> CardGrid(
                         Box(
                             modifier =
                                 Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(12.dp)
-                                    .background(AppColors.TransparentBlack50, RoundedCornerShape(12.dp))
-                                    .padding(horizontal = 6.dp),
+                                    // Nova: in the corner, not over the middle of the last row
+                                    .then(
+                                        if (NOVA_HOME_ENABLED) {
+                                            Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .padding(12.dp)
+                                                .background(AppColors.TransparentBlack50, RoundedCornerShape(12.dp))
+                                                .padding(horizontal = 6.dp)
+                                        } else {
+                                            Modifier
+                                                .align(Alignment.BottomCenter)
+                                                .background(AppColors.TransparentBlack50)
+                                        },
+                                    ),
                         ) {
                             val index = (focusedIndex + 1).takeIf { it > 0 } ?: "?"
 //                        if (focusedIndex >= 0) {

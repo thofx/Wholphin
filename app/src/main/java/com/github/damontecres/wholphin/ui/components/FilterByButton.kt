@@ -66,6 +66,7 @@ import com.github.damontecres.wholphin.data.filter.YearFilter
 import com.github.damontecres.wholphin.data.model.GetItemsFilter
 import com.github.damontecres.wholphin.ui.FontAwesome
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
 import com.github.damontecres.wholphin.ui.playback.theater.TheaterIcons
 import com.github.damontecres.wholphin.ui.theme.WholphinTheme
 import com.github.damontecres.wholphin.ui.tryRequestFocus
@@ -416,15 +417,27 @@ fun ExpandableFilterButton(
                     .widthIn(min = if (filterCount > 0 || isFocused) (MinButtonSize - 12.dp) else MinButtonSize),
         ) {
             // Nova: line icon, like the rest of the toolbar
-            Icon(
-                imageVector = TheaterIcons.Filter,
-                contentDescription = null,
-                tint = iconColor.takeOrElse { LocalContentColor.current },
-                modifier =
-                    Modifier
-                        .align(Alignment.Center)
-                        .size(22.dp),
-            )
+            if (NOVA_HOME_ENABLED) {
+                Icon(
+                    imageVector = TheaterIcons.Filter,
+                    contentDescription = null,
+                    tint = iconColor.takeOrElse { LocalContentColor.current },
+                    modifier =
+                        Modifier
+                            .align(Alignment.Center)
+                            .size(22.dp),
+                )
+            } else {
+                Text(
+                    text = stringResource(R.string.fa_filter),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = iconColor,
+                    fontSize = 16.sp,
+                    fontFamily = FontAwesome,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
         }
         AnimatedVisibility(filterCount > 0) {
             Text(

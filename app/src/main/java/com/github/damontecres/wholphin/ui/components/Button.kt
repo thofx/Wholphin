@@ -34,6 +34,7 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.ProvideTextStyle
 import androidx.tv.material3.Surface
 import androidx.tv.material3.Text
+import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
 
 /**
  * This is a re-implementation of [androidx.tv.material3.Button] with altered sizing, padding, colors, etc
@@ -54,8 +55,13 @@ fun Button(
         ),
     colors: ClickableSurfaceColors =
         ClickableSurfaceDefaults.colors(
-            // Nova: the shared light glass for unfocused buttons (was surfaceVariant at 80%)
-            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f),
+            // Nova: the shared light glass for unfocused buttons
+            containerColor =
+                if (NOVA_HOME_ENABLED) {
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f)
+                },
             contentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
             focusedContainerColor = MaterialTheme.colorScheme.onSurface,
             focusedContentColor = MaterialTheme.colorScheme.inverseOnSurface,
