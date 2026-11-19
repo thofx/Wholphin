@@ -165,9 +165,10 @@ object StreamFormatting {
         if (includeFlags) {
             val flags =
                 buildList {
-                    if (stream.isDefault) add(stream.localizedDefault)
-                    if (stream.isForced) add(stream.localizedForced)
-                    if (stream.isExternal) add(stream.localizedExternal)
+                    // The server may leave a flag's localized name out: no "null" in the title
+                    if (stream.isDefault) stream.localizedDefault?.let(::add)
+                    if (stream.isForced) stream.localizedForced?.let(::add)
+                    if (stream.isExternal) stream.localizedExternal?.let(::add)
                 }.joinToString(", ")
             if (flags.isNotEmpty()) {
                 return "$name ($flags)"

@@ -34,6 +34,7 @@ import com.github.damontecres.wholphin.preferences.get
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.util.BitstreamFilter
 import com.github.damontecres.wholphin.util.BitstreamFilteringCodecAdapterFactory
+import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.DolbyVisionProfile7Conversion
 import com.github.damontecres.wholphin.util.DolbyVisionProfile7ExtractorsFactory
 import com.github.damontecres.wholphin.util.DolbyVisionProfile7Filter
@@ -84,7 +85,9 @@ class PlayerFactory
             var assHandler: AssHandler? = null
             val newPlayer =
                 when (backend) {
-                    PlayerBackend.VLC -> VlcPlayer(context)
+                    PlayerBackend.VLC -> {
+                        VlcPlayer(context, verboseLogs = DebugLogTree.INSTANCE.enabled)
+                    }
 
                     PlayerBackend.EXO_PLAYER,
                     PlayerBackend.EXO_THEN_VLC,

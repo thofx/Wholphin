@@ -46,10 +46,16 @@ import kotlin.time.Duration
 @OptIn(UnstableApi::class)
 class VlcPlayer(
     context: Context,
+    verboseLogs: Boolean = false,
 ) : SimpleBasePlayer(Looper.getMainLooper()),
     MediaPlayer.EventListener,
     IVLCVout.OnNewVideoLayoutListener {
-    private val libVlc = LibVLC(context.applicationContext, arrayListOf("--http-reconnect", "--audio-time-stretch"))
+    // -vv: libVLC's own logs (decoder and output chosen, buffering) in logcat, with the app's verbose logging
+    private val libVlc =
+        LibVLC(
+            context.applicationContext,
+            arrayListOf("--http-reconnect", "--audio-time-stretch") + if (verboseLogs) listOf("-vv") else emptyList(),
+        )
     private val mediaPlayer = MediaPlayer(libVlc).also { it.setEventListener(this) }
     private val vlcThread = HandlerThread("VlcPlayer").also { it.start() }
     private val vlcHandler = Handler(vlcThread.looper)
@@ -224,7 +230,12 @@ class VlcPlayer(
         vlc {
             val media = Media(libVlc, uri)
             media.setHWDecoderEnabled(true, false)
-            if (startMs > 0) media.addOption(":start-time=${startMs / 1000.0}")
+            if (startMs > 0) {
+                media.addOption(":start-time=${startMs / 1000.0}")
+                // Resume from the keyframe before the position: an exact seek decodes and drops everything from
+                // that keyframe on first (seconds of 4K video), which made resuming much slower than ExoPlayer
+                media.addOption(":input-fast-seek")
+            }
             subtitles.forEach { media.addSlave(IMedia.Slave(IMedia.Slave.Type.Subtitle, 4, it)) }
             mediaPlayer.media = media
             media.release()
