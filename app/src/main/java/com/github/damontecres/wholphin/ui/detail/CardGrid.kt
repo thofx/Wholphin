@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -408,8 +409,10 @@ fun <T : CardGridItem> CardGrid(
                         Box(
                             modifier =
                                 Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .background(AppColors.TransparentBlack50),
+                                    .align(Alignment.BottomEnd)
+                                    .padding(12.dp)
+                                    .background(AppColors.TransparentBlack50, RoundedCornerShape(12.dp))
+                                    .padding(horizontal = 6.dp),
                         ) {
                             val index = (focusedIndex + 1).takeIf { it > 0 } ?: "?"
 //                        if (focusedIndex >= 0) {

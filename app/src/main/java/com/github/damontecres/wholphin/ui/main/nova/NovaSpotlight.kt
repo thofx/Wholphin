@@ -368,7 +368,8 @@ private fun SpotlightPane(
                 Modifier
                     .align(Alignment.BottomStart)
                     .padding(start = 56.dp, bottom = 8.dp)
-                    .width(480.dp),
+                    // Wide enough for an episode's details line; the overview keeps its own width
+                    .widthIn(max = 720.dp),
         ) {
             AnimatedContent(
                 targetState = entry,
@@ -508,6 +509,7 @@ private fun SpotlightInfo(
                 style = MaterialTheme.typography.bodyMedium.copy(shadow = TextShadow),
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 480.dp),
             )
         }
     }

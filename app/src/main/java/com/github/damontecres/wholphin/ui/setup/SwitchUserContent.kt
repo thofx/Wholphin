@@ -244,7 +244,7 @@ fun SwitchUserContent(
                         }
                     } else if (state.quickConnectStatus != null) {
                         Text(
-                            text = "Use Quick Connect on your device to authenticate to ${server.name ?: server.url}",
+                            text = stringResource(R.string.nova_quick_connect_prompt, server.name ?: server.url),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             textAlign = TextAlign.Center,

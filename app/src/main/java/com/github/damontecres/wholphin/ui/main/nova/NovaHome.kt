@@ -2,6 +2,8 @@ package com.github.damontecres.wholphin.ui.main.nova
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -356,11 +358,14 @@ private fun TopBarTab(
     onClick: () -> Unit,
 ) {
     val accent = TheaterColors.accent
+    val interactionSource = remember { MutableInteractionSource() }
+    val focused by interactionSource.collectIsFocusedAsState()
     Surface(
         onClick = onClick,
         shape = ClickableSurfaceDefaults.shape(CircleShape),
         colors = novaPillColors(contentColor = if (selected) TheaterColors.Text else TheaterColors.Text.copy(alpha = .6f)),
         scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+        interactionSource = interactionSource,
         modifier = modifier,
     ) {
         Text(
@@ -371,8 +376,8 @@ private fun TopBarTab(
                 Modifier
                     .padding(horizontal = 16.dp, vertical = 6.dp)
                     .drawBehind {
-                        // Underline the current tab, hidden behind the focused pill
-                        if (selected) {
+                        // Underline the current tab; the focused pill already shows where focus is
+                        if (selected && !focused) {
                             val y = size.height + 3.dp.toPx()
                             drawLine(accent, Offset(0f, y), Offset(size.width, y), strokeWidth = 2.dp.toPx())
                         }

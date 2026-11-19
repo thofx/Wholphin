@@ -678,10 +678,13 @@ private fun ButtonRow(
                     ?: stringResource(R.string.none)
             }
         }
+    // The generated title starts with the language, which the file's own title (e.g. "AAC2.0,普通话") may cut off;
+    // the flags ("(Default)") are left out to fit the button
     val audioValue =
         settings.audioStreams
             .firstOrNull { it.index == settings.audioIndex }
-            ?.label
+            ?.displayTitle
+            ?.substringBefore(" (")
     val currentItem = playback.currentPlayback?.item
 
     Row(
@@ -724,6 +727,8 @@ private fun ButtonRow(
                     label = stringResource(R.string.audio),
                     value = audioValue,
                     onClick = { state.openPanel(TheaterPanel.AUDIO) },
+                    // Language, codec and channels ("中文 AAC stereo") need more room than the other values
+                    width = 208.dp,
                     modifier =
                         Modifier
                             .focusRequester(requesters.getValue(TheaterPanel.AUDIO)),

@@ -11,4 +11,5 @@
     <string name="nova_favorites_empty_title">No favorites yet</string>
     <string name="nova_favorites_empty_hint">Long press OK on any movie or show and choose \"Favorite\".\nYour favorites appear here by type.</string>
     <string name="nova_go_home">Back to home</string>
+    <string name="nova_quick_connect_prompt">Use Quick Connect on your device to sign in to %1$s</string>
 </resources>

@@ -11,4 +11,5 @@
     <string name="nova_favorites_empty_title">還沒有收藏</string>
     <string name="nova_favorites_empty_hint">在任意影片或劇集上長按確認鍵，選擇「收藏」\n收藏的內容會依類型出現在這裡</string>
     <string name="nova_go_home">返回首頁</string>
+    <string name="nova_quick_connect_prompt">請在已登入的裝置上使用快速連線，登入到 %1$s</string>
 </resources>
