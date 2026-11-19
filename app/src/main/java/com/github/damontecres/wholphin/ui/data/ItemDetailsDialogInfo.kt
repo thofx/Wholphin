@@ -34,7 +34,12 @@ import com.github.damontecres.wholphin.ui.formatDuration
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.letNotEmpty
 import com.github.damontecres.wholphin.ui.main.nova.NOVA_HOME_ENABLED
+import com.github.damontecres.wholphin.ui.main.nova.NovaInfoSection
 import com.github.damontecres.wholphin.ui.main.nova.NovaSheet
+import com.github.damontecres.wholphin.ui.main.nova.NovaStreamCard
+import com.github.damontecres.wholphin.ui.main.nova.audioCard
+import com.github.damontecres.wholphin.ui.main.nova.subtitleCard
+import com.github.damontecres.wholphin.ui.main.nova.videoHeadline
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatAudioCodec
 import com.github.damontecres.wholphin.ui.util.StreamFormatting.formatSubtitleCodec
 import com.github.damontecres.wholphin.util.languageName
@@ -195,64 +200,97 @@ fun ItemDetailsDialog(
                     )
                 }
 
-                // Video streams
                 val videoStreams = mediaStreams.filter { it.type == MediaStreamType.VIDEO }
-                itemsIndexed(videoStreams) { index, stream ->
-                    MediaInfoSection(
-                        title = titleIndex(videoLabel, index, videoStreams.size),
-                        items = remember { buildVideoStreamInfo(resources, stream) },
-                        additional = remember { buildVideoStreamInfoAdditional(resources, stream) },
-                    )
-                }
-
-                // Audio streams - display multiple per row
                 val audioStreams = mediaStreams.filter { it.type == MediaStreamType.AUDIO }
-                itemsIndexed(audioStreams.chunked(StreamsPerRow)) { groupIndex, streamGroup ->
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        streamGroup.forEachIndexed { index, stream ->
-                            MediaInfoSection(
-                                title =
-                                    titleIndex(
-                                        audioLabel,
-                                        groupIndex * StreamsPerRow + index,
-                                        audioStreams.size,
-                                    ),
-                                items = buildAudioStreamInfo(resources, stream),
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
-                        // Fill remaining space if less than 3 items
-                        repeat(StreamsPerRow - streamGroup.size) {
-                            Spacer(modifier = Modifier.weight(1f))
+                val subtitleStreams = mediaStreams.filter { it.type == MediaStreamType.SUBTITLE }
+                if (NOVA_HOME_ENABLED) {
+                    // Nova: video as a summary line and a two column grid, one card per audio / subtitle track
+                    itemsIndexed(videoStreams) { index, stream ->
+                        NovaInfoSection(
+                            title = titleIndex(videoLabel, index, videoStreams.size),
+                            headline = remember { videoHeadline(stream) },
+                            pairs =
+                                remember {
+                                    buildVideoStreamInfo(resources, stream) + buildVideoStreamInfoAdditional(resources, stream)
+                                },
+                        )
+                    }
+                    listOf(audioLabel to audioStreams, subtitleLabel to subtitleStreams).forEach { (label, streams) ->
+                        if (streams.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = .55f),
+                                    modifier = Modifier.padding(top = 6.dp),
+                                )
+                            }
+                            itemsIndexed(streams) { index, stream ->
+                                val (primary, flags, secondary) =
+                                    remember {
+                                        if (label == audioLabel) audioCard(resources, stream) else subtitleCard(stream)
+                                    }
+                                NovaStreamCard(title = "${index + 1}", primary = primary, flags = flags, secondary = secondary)
+                            }
                         }
                     }
-                }
+                } else {
+                    // Video streams
+                    itemsIndexed(videoStreams) { index, stream ->
+                        MediaInfoSection(
+                            title = titleIndex(videoLabel, index, videoStreams.size),
+                            items = remember { buildVideoStreamInfo(resources, stream) },
+                            additional = remember { buildVideoStreamInfoAdditional(resources, stream) },
+                        )
+                    }
 
-                // Subtitle streams - display multiple per row
-                val subtitleStreams = mediaStreams.filter { it.type == MediaStreamType.SUBTITLE }
-                itemsIndexed(subtitleStreams.chunked(StreamsPerRow)) { groupIndex, streamGroup ->
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        streamGroup.forEachIndexed { index, stream ->
-                            MediaInfoSection(
-                                title =
-                                    titleIndex(
-                                        subtitleLabel,
-                                        groupIndex * StreamsPerRow + index,
-                                        subtitleStreams.size,
-                                    ),
-                                items = buildSubtitleStreamInfo(resources, stream, showFilePath),
-                                modifier = Modifier.weight(1f),
-                            )
+                    // Audio streams - display multiple per row
+                    itemsIndexed(audioStreams.chunked(3)) { groupIndex, streamGroup ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            streamGroup.forEachIndexed { index, stream ->
+                                MediaInfoSection(
+                                    title =
+                                        titleIndex(
+                                            audioLabel,
+                                            groupIndex * 3 + index,
+                                            audioStreams.size,
+                                        ),
+                                    items = buildAudioStreamInfo(resources, stream),
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            // Fill remaining space if less than 3 items
+                            repeat(3 - streamGroup.size) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
                         }
-                        // Fill remaining space if less than 3 items
-                        repeat(StreamsPerRow - streamGroup.size) {
-                            Spacer(modifier = Modifier.weight(1f))
+                    }
+
+                    // Subtitle streams - display multiple per row
+                    itemsIndexed(subtitleStreams.chunked(3)) { groupIndex, streamGroup ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            streamGroup.forEachIndexed { index, stream ->
+                                MediaInfoSection(
+                                    title =
+                                        titleIndex(
+                                            subtitleLabel,
+                                            groupIndex * 3 + index,
+                                            subtitleStreams.size,
+                                        ),
+                                    items = buildSubtitleStreamInfo(resources, stream, showFilePath),
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            // Fill remaining space if less than 3 items
+                            repeat(3 - streamGroup.size) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
                         }
                     }
                 }
@@ -266,9 +304,6 @@ fun ItemDetailsDialog(
     }
 }
 
-/** Audio / subtitle sections per row: Nova's side panel is narrower than upstream's dialog */
-private val StreamsPerRow = if (NOVA_HOME_ENABLED) 2 else 3
-
 @Composable
 private fun MediaInfoSection(
     title: String,
@@ -277,25 +312,7 @@ private fun MediaInfoSection(
     additional: List<Pair<String, String>> = listOf(),
 ) {
     if (NOVA_HOME_ENABLED) {
-        // A label column and a value column, one list (the panel has no room for two side by side)
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = modifier.padding(vertical = 6.dp)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .6f),
-            )
-            (items + additional).forEach { (label, value) ->
-                Row {
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = .55f),
-                        modifier = Modifier.width(96.dp),
-                    )
-                    Text(text = value, style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-        }
+        NovaInfoSection(title = title, pairs = items + additional, modifier = modifier)
         return
     }
     Column(
