@@ -827,8 +827,7 @@ class TestTrackSelection {
             ).toTracks()
         val params = TrackSelectionParameters.Builder().build()
 
-        fun select(audioIndex: Int) =
-            TrackSelectionUtils.createTrackSelections(params, tracks, audioIndex, TrackIndex.DISABLED, source)
+        fun select(audioIndex: Int) = TrackSelectionUtils.createTrackSelections(params, tracks, audioIndex, TrackIndex.DISABLED, source)
 
         select(4).also {
             Assert.assertTrue(it.audioSelected)
